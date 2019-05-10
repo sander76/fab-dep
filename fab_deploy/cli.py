@@ -105,6 +105,8 @@ def _load_settings():
 )
 @click.version_option()
 def main(fabfile, key, clean, force_download):
+    """Main script entry point"""
+    EASE_FOLDER.mkdir(exist_ok=True)
 
     settings: Settings = _load_settings()
 
