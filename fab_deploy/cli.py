@@ -30,7 +30,7 @@ ERROR_COLOR = "red"
 class Settings(BaseSettings):
     """Fab deploy settings."""
 
-    download_url: str = "https://motorisation.hde.nl/bin/fabricator/fabricator.zip"
+    download_url: str = None
     installation_folder: Path = "/fabricator/"
     key: str = None
 
@@ -87,7 +87,7 @@ def _load_settings():
 @click.option(
     "--fabfile",
     default=None,
-    help="Ease installation file. Use this when internet connection is not available.",
+    help="Ease binary. Use when internet connection is not available.",
     type=click.Path(exists=True),
 )
 @click.option("--key", default=None, help="encryption key")

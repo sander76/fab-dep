@@ -1,3 +1,3 @@
 # Deployment
 
-1. python setup.py bdist-wheel
+Read the online docs
