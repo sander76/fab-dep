@@ -225,7 +225,7 @@ def _download_file(
 
     size = int(request.headers.get("content-length"))
     label = label.format(
-        dest=dest, dest_basename=dest, size=size / 1024.0 / 1024
+        dest=dest, dest_basename=dest.name, size=size / 1024.0 / 1024
     )
     with click.open_file(dest, "wb") as f:
         content_iter = request.iter_content(chunk_size=chunk_size)
@@ -236,7 +236,7 @@ def _download_file(
                 if chunk:
                     f.write(chunk)
                     # f.flush()
-
+    click.secho("Finished. Saved {}".format(dest))
     return dest
 
 
