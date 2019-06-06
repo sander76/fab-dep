@@ -235,7 +235,7 @@ def _download_file(
             for chunk in bar:
                 if chunk:
                     f.write(chunk)
-                    f.flush()
+                    # f.flush()
 
     return dest
 
