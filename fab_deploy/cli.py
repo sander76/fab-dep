@@ -200,10 +200,14 @@ def _download_file(
                 "File already exists. Replace {}?".format(dest)
             ):
                 return dest
+    try:
+        request = requests.get(url, stream=True)
+    except requests.exceptions.ConnectionError as err:
+        click.secho("ERROR: Unable to make a connection")
+        LOGGER.exception(err)
+        raise Abort()
 
-    request = requests.get(url, stream=True)
-
-    if not request.status_code in (200, 201, 202):
+    if request.status_code not in (200, 201, 202):
         click.secho("ERROR: Unable to reach download target")
         LOGGER.error(request)
         raise Abort()
