@@ -26,6 +26,16 @@ INFO_COLOR = "yellow"
 OK_COLOR = "green"
 ERROR_COLOR = "red"
 
+jumbo ="""\
+  ______      ____ _______ ____   ____  _      
+ |  ____/\   |  _ \__   __/ __ \ / __ \| |     
+ | |__ /  \  | |_) | | | | |  | | |  | | |     
+ |  __/ /\ \ |  _ <  | | | |  | | |  | | |     
+ | | / ____ \| |_) | | | | |__| | |__| | |____ 
+ |_|/_/    \_\____/  |_|  \____/ \____/|______|
+                                               
+
+"""
 
 class Settings(BaseSettings):
     """Fab deploy settings."""
@@ -161,6 +171,7 @@ def main(fabfile, key, clean, force_download):
 
 
 if __name__ == "__main__":
+    print(jumbo)
     sys.exit(main())  # pragma: no cover
 
 
