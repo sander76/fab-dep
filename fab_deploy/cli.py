@@ -37,6 +37,8 @@ jumbo ="""\
 
 """
 
+click.echo(jumbo)
+
 class Settings(BaseSettings):
     """Fab deploy settings."""
 
@@ -171,7 +173,7 @@ def main(fabfile, key, clean, force_download):
 
 
 if __name__ == "__main__":
-    print(jumbo)
+    # print(jumbo)
     sys.exit(main())  # pragma: no cover
 
 
