@@ -64,9 +64,9 @@ def working_done(message, done="done."):
             try:
                 result = func(*args, **kwargs)
             except EchoException as err:
-                click.secho(str(err), fg=ERROR_COLOR)
+                click.secho(str(err), bg=ERROR_COLOR)
             except FatalEchoException as err:
-                click.secho(str(err), fg=ERROR_COLOR)
+                click.secho(str(err), bg=ERROR_COLOR)
                 raise Abort()
             else:
                 click.secho(done, fg=INFO_COLOR)
@@ -124,14 +124,17 @@ def main(fabfile, key, clean, force_download):
     settings: Settings = _load_settings()
 
     if settings.download_url is None:
-        click.secho("IMPORTANT !", fg="red")
-        click.echo("No download url provided yet. Unable to automatically")
-        click.echo("check for downloads")
-        click.echo("Edit your config file.")
+        click.secho("IMPORTANT !", bg=ERROR_COLOR)
+        click.secho(
+            "No download url provided yet. Unable to automatically",
+            bg=ERROR_COLOR,
+        )
+        click.secho("check for downloads", bg=ERROR_COLOR)
+        click.secho("Edit your config file.", bg=ERROR_COLOR)
         click.echo("")
 
     if key:
-        click.secho("IMPORTANT !", fg="red")
+        click.secho("IMPORTANT !", bg=ERROR_COLOR)
         click.echo(
             "You have provided a key. This will be stored on the computer"
         )
@@ -156,6 +159,9 @@ def main(fabfile, key, clean, force_download):
     if fabfile is not None:
         fabfile = Path(fabfile)
     else:
+        if settings.download_url is None:
+            click.secho("No proper url defined. Not exit", bg=ERROR_COLOR)
+            raise Abort()
         fabfile = _download_fabfile(
             settings.download_url, force_download=force_download
         )
