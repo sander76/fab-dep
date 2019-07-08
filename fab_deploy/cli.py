@@ -26,7 +26,7 @@ INFO_COLOR = "yellow"
 OK_COLOR = "green"
 ERROR_COLOR = "red"
 
-jumbo ="""\
+jumbo = r"""\
   ______      ____ _______ ____   ____  _      
  |  ____/\   |  _ \__   __/ __ \ / __ \| |     
  | |__ /  \  | |_) | | | | |  | | |  | | |     
@@ -38,6 +38,7 @@ jumbo ="""\
 """
 
 click.echo(jumbo)
+
 
 class Settings(BaseSettings):
     """Fab deploy settings."""
@@ -121,6 +122,13 @@ def main(fabfile, key, clean, force_download):
     EASE_FOLDER.mkdir(exist_ok=True)
 
     settings: Settings = _load_settings()
+
+    if settings.download_url is None:
+        click.secho("IMPORTANT !", fg="red")
+        click.echo("No download url provided yet. Unable to automatically")
+        click.echo("check for downloads")
+        click.echo("Edit your config file.")
+        click.echo("")
 
     if key:
         click.secho("IMPORTANT !", fg="red")
