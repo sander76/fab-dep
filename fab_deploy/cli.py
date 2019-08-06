@@ -22,11 +22,11 @@ KEY_EAKEY = "eakey"
 
 LOGGER = logging.getLogger("__name__")
 
-INFO_COLOR = "yellow"
+INFO_COLOR = "cyan"
 OK_COLOR = "green"
 ERROR_COLOR = "red"
 
-jumbo = r"""\
+jumbo = r"""
   ______      ____ _______ ____   ____  _      
  |  ____/\   |  _ \__   __/ __ \ / __ \| |     
  | |__ /  \  | |_) | | | | |  | | |  | | |     
@@ -103,7 +103,6 @@ def _load_settings():
     help="Ease binary. Use when internet connection is not available.",
     type=click.Path(exists=True),
 )
-@click.option("--key", default=None, help="encryption key")
 @click.option(
     "--clean",
     default=False,
@@ -116,57 +115,41 @@ def _load_settings():
     help="Always download the binary. Overwriting an existing one.",
     is_flag=True,
 )
-@click.version_option()
-def main(fabfile, key, clean, force_download):
-    """Main script entry point"""
+def install(fabfile, clean, force_download):
+
     EASE_FOLDER.mkdir(exist_ok=True)
 
     settings: Settings = _load_settings()
 
-    if settings.download_url is None:
-        click.secho("IMPORTANT !", bg=ERROR_COLOR)
-        click.secho(
-            "No download url provided yet. Unable to automatically",
-            bg=ERROR_COLOR,
-        )
-        click.secho("check for downloads", bg=ERROR_COLOR)
-        click.secho("Edit your config file.", bg=ERROR_COLOR)
+    if settings.key is None:
+        click.secho("----------------------------------", bg="red")
+        click.secho("Error: Encryption key not provided", bg="red")
+        click.secho("----------------------------------", bg="red")
+        click.secho("Please provide an encryption key:", fg="cyan")
+        click.secho("enter <fab --help> to get assistance", fg="cyan")
+        click.secho("EXITING", bg=ERROR_COLOR)
+        return
+
+    if fabfile is None and settings.download_url is None:
+        click.secho("---------------------------", bg="red")
+        click.secho("Error: No binary available.", bg="red")
+        click.secho("---------------------------", bg="red")
         click.echo("")
-
-    if key:
-        click.secho("IMPORTANT !", bg=ERROR_COLOR)
-        click.echo(
-            "You have provided a key. This will be stored on the computer"
-        )
-        click.echo("and used in the future. If you provide the wrong key,")
-        click.echo("you can NOT update the tool anymore.")
-        click.echo(
-            "Only expert center Motors and controls is able to solve this."
-        )
-        click.echo("")
-
-        if click.confirm("Continue ?", default="n"):
-            settings.key = key
-            _save_settings(settings)
-        else:
-            click.echo("Exit installation.")
-            return
-
-    key = _load_key(settings)
+        click.secho("Please provide a binary location OR a download URL.")
+        click.secho("Use <fab --help> for help.")
+        click.secho("EXITING", bg=ERROR_COLOR)
+        return
 
     _make_temp_folder()
 
     if fabfile is not None:
         fabfile = Path(fabfile)
     else:
-        if settings.download_url is None:
-            click.secho("No proper url defined. Not exit", bg=ERROR_COLOR)
-            raise Abort()
         fabfile = _download_fabfile(
             settings.download_url, force_download=force_download
         )
 
-    decrypted_file = _decrypt(fabfile, key)
+    decrypted_file = _decrypt(fabfile, settings.key)
 
     if clean:
         _clean(settings.installation_folder)
@@ -186,16 +169,39 @@ def main(fabfile, key, clean, force_download):
     )
 
 
-if __name__ == "__main__":
-    # print(jumbo)
-    sys.exit(main())  # pragma: no cover
+@click.command()
+@click.argument("key", type=click.STRING)
+def set_key(key: str):
+    """Set an encryption key"""
+    settings: Settings = _load_settings()
+    settings.key = key
+    _save_settings(settings)
+    click.secho("Encryption key saved.", fg="green")
+    click.secho(key, fg="green")
 
 
-def _load_key(settings: Settings):
-    if settings.key is None:
-        click.echo("Key not available. Aborting install.")
-        raise Abort()
-    return settings.key
+@click.command()
+@click.argument("download_url")
+def set_url(download_url: str):
+    """Set a URL to check for updates."""
+    settings: Settings = _load_settings()
+
+    settings.download_url = download_url
+    _save_settings(settings)
+
+    click.secho("Download url saved.", fg="green")
+    click.secho(download_url, fg="green")
+
+
+@click.version_option()
+@click.group()
+def main():
+    """Fabtool main entrypoint"""
+
+
+main.add_command(install)
+main.add_command(set_key)
+main.add_command(set_url)
 
 
 def _make_temp_folder():
@@ -290,3 +296,8 @@ def _extract(archive, output_folder):
         raise FatalEchoException(
             "An unknown error occurred. Please contact support."
         )
+
+
+if __name__ == "__main__":
+    # print(jumbo)
+    sys.exit(main())  # pragma: no cover

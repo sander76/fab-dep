@@ -93,6 +93,7 @@ def test_decrypt_wrong_key(fake_temp_folder,clean):
 @responses.activate
 def test_download_fab_file(fake_temp_folder, clean):
     settings = _load_settings()
+    settings.download_url="https://google.com"
     responses.add(responses.GET, settings.download_url, status=404)
 
     with pytest.raises(Abort):
