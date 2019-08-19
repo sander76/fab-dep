@@ -1,32 +1,29 @@
 # -*- coding: utf-8 -*-
 """Console script for fab-deploy."""
 import json
-import logging
-import os
 import shutil
 import sys
-from pathlib import Path
 
+from pathlib import Path
+from urllib.parse import urljoin
 import click
 
-import requests
 from click import Abort
 from pydantic import BaseSettings
 
+from fab_deploy.const import (
+    EASE_CONFIG_FOLDER,
+    INSTALLATION_FOLDER,
+    FAB_DEPLOY_CONFIG,
+    TEMP_FOLDER,
+    LOGGER,
+    INFO_COLOR,
+    ERROR_COLOR,
+)
 from fab_deploy.crypto import decryptFile
+from fab_deploy.download import _download_fabfile, _download_version_file
 
-EASE_CONFIG_FOLDER = (Path.home()).joinpath(".ease")
-INSTALLATION_FOLDER = (Path.home()).joinpath("fabricator")
-
-FAB_DEPLOY_CONFIG = EASE_CONFIG_FOLDER.joinpath("fab-deploy.json")
-TEMP_FOLDER = (Path.home()).joinpath(".ease", "bin")
 # KEY_EAKEY = "eakey"
-
-LOGGER = logging.getLogger("__name__")
-
-INFO_COLOR = "cyan"
-OK_COLOR = "green"
-ERROR_COLOR = "red"
 
 jumbo = r"""
   ______      ____ _______ ____   ____  _      
@@ -43,7 +40,10 @@ click.echo(jumbo)
 
 
 class Settings(BaseSettings):
-    """Fab deploy settings."""
+    """Fab deploy settings.
+
+    download_url: # URL base folder where binaries and version info is stored.
+    """
 
     download_url: str = None
     installation_folder: Path = INSTALLATION_FOLDER
@@ -108,45 +108,12 @@ def _check_key(settings: Settings):
         raise Abort()
 
 
-# def _decrypt(fabfile:Path)
-
-
-@click.command()
-@click.option(
-    "--clean",
-    default=False,
-    help="clear the installation folder first",
-    is_flag=True,
-)
-@click.option(
-    "--force_download",
-    default=False,
-    help="Always download the binary. Overwriting an existing one.",
-    is_flag=True,
-)
-def install(clean, force_download):
-
-    EASE_CONFIG_FOLDER.mkdir(exist_ok=True)
-
-    settings: Settings = _load_settings()
-
-    _check_key(settings)
-
-    if settings.download_url is None:
-        click.secho("-----------------------", bg="red")
-        click.secho("Error: No URL provided.", bg="red")
-        click.secho("-----------------------", bg="red")
-        click.echo("")
-        click.secho("Use <fab --help> for help.")
-        raise Abort()
-
-    _make_temp_folder()
-
-    fabfile = _download_fabfile(
-        settings.download_url, force_download=force_download
-    )
-
-    _install(fabfile, clean, settings)
+def _validate_folders(
+    temp_folder: Path, installation_folder: Path, ease_config_folder: Path
+):
+    temp_folder.mkdir(exist_ok=True, parents=True)
+    installation_folder.mkdir(exist_ok=True, parents=True)
+    ease_config_folder.mkdir(exist_ok=True, parents=True)
 
 
 def _install(fabfile: Path, clean, settings):
@@ -166,17 +133,102 @@ def _install(fabfile: Path, clean, settings):
     )
 
 
-@click.command()
-@click.argument("file", type=click.Path(exists=True))
-def from_file(file):
-    fabfile = Path(file)
+def _get_latest_url(base_url: Settings, json_file) -> str:
+    """Get the filename of the latest fabricator release."""
+    with open(json_file) as fl:
+        _version = json.load(fl)
 
-    EASE_CONFIG_FOLDER.mkdir(exist_ok=True)
+    latest = _version["latest"]
+    return urljoin(base_url.download_url, latest)
+
+
+@working_done("Decrypting...")
+def _decrypt(aes_file: Path, key) -> Path:
+    buffer_size = 64 * 1024
+
+    temp_file = TEMP_FOLDER.joinpath("archive.ease")
+
+    if not aes_file.exists():
+        raise FatalEchoException("Encrypted file not found")
+
+    try:
+        decryptFile(str(aes_file), str(temp_file), key, buffer_size)
+    except PermissionError:
+        raise FatalEchoException("permission error")
+    except ValueError as err:
+        raise FatalEchoException(err)
+
+    return temp_file
+
+
+@working_done("Cleaning output folder...")
+def _clean(output_folder: Path):
+    click.secho("Cleaning installation folder.")
+    try:
+        shutil.rmtree(output_folder)
+    except FileNotFoundError:
+        click.secho("Folder does not exist. Continueing", fg=INFO_COLOR)
+
+
+@working_done("Extracting archive...")
+def _extract(archive, output_folder):
+    try:
+        shutil.unpack_archive(archive, output_folder, "bztar")
+
+    except Exception as err:
+        LOGGER.exception(err)
+        click.secho(err)
+        raise Abort()
+
+
+@click.command()
+@click.option(
+    "--clean",
+    default=False,
+    help="clear the installation folder first",
+    is_flag=True,
+)
+@click.option(
+    "--force_download",
+    default=False,
+    help="Always download the binary. Overwriting an existing one.",
+    is_flag=True,
+)
+def install(clean, force_download):
+    """Install the fabricator tool using a download link."""
 
     settings: Settings = _load_settings()
 
     _check_key(settings)
-    _make_temp_folder()
+
+    if settings.download_url is None:
+        click.secho("-----------------------", bg="red")
+        click.secho("Error: No URL provided.", bg="red")
+        click.secho("-----------------------", bg="red")
+        click.echo("")
+        click.secho("Use <fab --help> for help.")
+        raise Abort()
+
+    _validate_folders(TEMP_FOLDER, INSTALLATION_FOLDER, EASE_CONFIG_FOLDER)
+
+    version_file = _download_version_file(settings.download_url)
+    binary_url = _get_latest_url(settings, version_file)
+
+    fabfile = _download_fabfile(binary_url, force_download=force_download)
+
+    _install(fabfile, clean, settings)
+
+
+@click.command()
+@click.argument("file", type=click.Path(exists=True))
+def from_file(file):
+    """Install fabricator using a provided binary file."""
+    settings: Settings = _load_settings()
+    _check_key(settings)
+
+    fabfile = Path(file)
+
+    _validate_folders(TEMP_FOLDER, INSTALLATION_FOLDER, EASE_CONFIG_FOLDER)
 
     _install(fabfile, True, settings)
 
@@ -214,100 +266,6 @@ def main():
 main.add_command(install)
 main.add_command(set_key)
 main.add_command(set_url)
-
-
-def _make_temp_folder():
-    TEMP_FOLDER.mkdir(exist_ok=True, parents=True)
-
-
-def _download_fabfile(download_url: str, force_download=False):
-
-    return _download_file(
-        download_url,
-        TEMP_FOLDER.joinpath("fabricator.ease"),
-        force_download=force_download,
-    )
-
-
-def _download_file(
-    url,
-    dest: Path,
-    chunk_size=1024,
-    force_download=False,
-    label="Downloading {dest_basename} ({size:.2f}MB)",
-) -> Path:
-
-    click.secho("Downloading binary...", fg=INFO_COLOR)
-    if dest.exists():
-        if not force_download:
-
-            if not click.confirm(
-                "File already exists. Replace {}?".format(dest)
-            ):
-                return dest
-    try:
-        request = requests.get(url, stream=True)
-    except requests.exceptions.ConnectionError as err:
-        click.secho("ERROR: Unable to make a connection")
-        LOGGER.exception(err)
-        raise Abort()
-
-    if request.status_code not in (200, 201, 202):
-        click.secho("ERROR: Unable to reach download target")
-        LOGGER.error(request)
-        raise Abort()
-
-    size = int(request.headers.get("content-length"))
-    label = label.format(
-        dest=dest, dest_basename=dest.name, size=size / 1024.0 / 1024
-    )
-    with click.open_file(dest, "wb") as f:
-        content_iter = request.iter_content(chunk_size=chunk_size)
-        with click.progressbar(
-            content_iter, length=size / 1024, label=label
-        ) as bar:
-            for chunk in bar:
-                if chunk:
-                    f.write(chunk)
-                    # f.flush()
-    click.secho("Finished. Saved {}".format(dest))
-    return dest
-
-
-@working_done("Decrypting...")
-def _decrypt(aes_file: Path, key) -> Path:
-    buffer_size = 64 * 1024
-
-    temp_file = TEMP_FOLDER.joinpath("archive.ease")
-
-    if not aes_file.exists():
-        raise FatalEchoException("Encrypted file not found")
-
-    try:
-        decryptFile(str(aes_file), str(temp_file), key, buffer_size)
-    except PermissionError:
-        raise FatalEchoException("permission error")
-    except ValueError as err:
-        raise FatalEchoException(err)
-
-    return temp_file
-
-
-@working_done("Cleaning output folder...")
-def _clean(output_folder):
-    shutil.rmtree(output_folder)
-
-
-@working_done("Extracting archive...")
-def _extract(archive, output_folder):
-    try:
-        shutil.unpack_archive(archive, output_folder, "bztar")
-
-    except Exception as err:
-        LOGGER.exception(err)
-        click.secho(err)
-        raise Abort()
-
 
 if __name__ == "__main__":
     # print(jumbo)

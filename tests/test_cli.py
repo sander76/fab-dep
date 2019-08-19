@@ -1,21 +1,29 @@
+from urllib.parse import urljoin
+
 import pytest
 import responses
 from click import Abort
 
 from fab_deploy.cli import (
-    _make_temp_folder,
     _extract,
     _decrypt,
     _load_settings,
-    _download_fabfile,
-    _clean)
+    _clean,
+    Settings,
+    _install,
+    _get_latest_url, _validate_folders)
+from fab_deploy.download import _download_fabfile, _download_version_file
 from tests.common import TEST_TEMP_FOLDER, HERE
 
+KEY = "abcABC"
 ARCHIVE_FILE = HERE.joinpath("test_files", "archive.ease.tar.bz2")
-AES_FILE = HERE.joinpath("test_files", "archive.ease.aes")
-FAKE_AES_FILE = HERE.joinpath("test_files", "archive.ease_fake.aes")
+FAB_FILE = HERE.joinpath("test_files", "archive.ease.aes")
+FAKE_FAB_FILE = HERE.joinpath("test_files", "archive.ease_fake.aes")
+VERSION_FILE = HERE.joinpath("test_files", "version.json")
+
 FAKE_CONFIG_FILE = TEST_TEMP_FOLDER.joinpath("fab_config.json")
 
+DUMMY_DOWNLOAD_URL="https://motorisation.hde.nl/fabricator/win10/"
 
 @pytest.fixture
 def fake_temp_folder(monkeypatch):
@@ -23,11 +31,22 @@ def fake_temp_folder(monkeypatch):
     monkeypatch.setattr("fab_deploy.cli.FAB_DEPLOY_CONFIG", FAKE_CONFIG_FILE)
 
 
-def test_make_temp_folder(fake_temp_folder, clean):
-    _make_temp_folder()
+@pytest.fixture
+def dummy_settings(tmp_path):
+    settings = Settings(
+        installation_folder=tmp_path / "install_folder",
+        key=KEY,
+        download_url=DUMMY_DOWNLOAD_URL,
+    )
+    return settings
 
-    assert TEST_TEMP_FOLDER.exists()
-    assert not TEST_TEMP_FOLDER.is_file()
+
+@pytest.fixture
+def dummy_version_file(tmp_path):
+    return tmp_path / "version.json"
+
+
+
 
 
 def test_extract(fake_temp_folder, clean):
@@ -60,13 +79,10 @@ def test_extract(fake_temp_folder, clean):
     assert len(files) == 1
 
 
-KEY = "abcABC"
-
-
 def test_decrypt_wrong_file(fake_temp_folder, clean):
     """No file to encrypt found"""
     with pytest.raises(Abort):
-        _decrypt(FAKE_AES_FILE, KEY)
+        _decrypt(FAKE_FAB_FILE, KEY)
 
 
 def test_decrypt_file(fake_temp_folder, clean):
@@ -75,11 +91,12 @@ def test_decrypt_file(fake_temp_folder, clean):
     assert TEST_TEMP_FOLDER.exists()
     assert not TEST_TEMP_FOLDER.is_file()
 
-    fl = _decrypt(AES_FILE, KEY)
+    fl = _decrypt(FAB_FILE, KEY)
 
     assert fl == TEST_TEMP_FOLDER.joinpath("archive.ease")
 
-def test_decrypt_wrong_key(fake_temp_folder,clean):
+
+def test_decrypt_wrong_key(fake_temp_folder, clean):
     TEST_TEMP_FOLDER.mkdir(exist_ok=True, parents=True)
 
     assert TEST_TEMP_FOLDER.exists()
@@ -88,17 +105,36 @@ def test_decrypt_wrong_key(fake_temp_folder,clean):
     key = "wrong_key"
 
     with pytest.raises(Abort):
-        fl = _decrypt(AES_FILE, key)
+        fl = _decrypt(FAB_FILE, key)
+
 
 @responses.activate
-def test_download_fab_file(fake_temp_folder, clean):
-    settings = _load_settings()
-    settings.download_url="https://google.com"
-    responses.add(responses.GET, settings.download_url, status=404)
+def test_download_fab_file(fake_temp_folder, clean, dummy_settings):
+
+    #dummy_settings.download_url = "https://google.com"
+    responses.add(responses.GET, dummy_settings.download_url, status=404)
 
     with pytest.raises(Abort):
-        _download_fabfile(settings.download_url)
+        _download_fabfile(dummy_settings.download_url)
+
+
+def test__install(dummy_settings: Settings, fake_temp_folder):
+    assert not dummy_settings.installation_folder.exists()
+
+    _validate_folders()
+    _install(FAB_FILE, True, dummy_settings)
+
+    assert dummy_settings.installation_folder.exists()
+
+    files = list(dummy_settings.installation_folder.glob("**/*.*"))
+    assert len(files) > 0
 
 
 def test_cli():
     pass
+
+
+def test_get_latest_url(dummy_settings):
+    latest = _get_latest_url(dummy_settings,VERSION_FILE)
+
+    assert latest == "https://motorisation.hde.nl/fabricator/win10/win10-fabricator-app0.11-ease1.0.fab"
