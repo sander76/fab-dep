@@ -15,10 +15,12 @@ from pydantic import BaseSettings
 
 from fab_deploy.crypto import decryptFile
 
-EASE_FOLDER = (Path.home()).joinpath(".ease")
-FAB_DEPLOY_CONFIG = EASE_FOLDER.joinpath("fab-deploy.json")
+EASE_CONFIG_FOLDER = (Path.home()).joinpath(".ease")
+INSTALLATION_FOLDER = (Path.home()).joinpath("fabricator")
+
+FAB_DEPLOY_CONFIG = EASE_CONFIG_FOLDER.joinpath("fab-deploy.json")
 TEMP_FOLDER = (Path.home()).joinpath(".ease", "bin")
-KEY_EAKEY = "eakey"
+# KEY_EAKEY = "eakey"
 
 LOGGER = logging.getLogger("__name__")
 
@@ -44,7 +46,7 @@ class Settings(BaseSettings):
     """Fab deploy settings."""
 
     download_url: str = None
-    installation_folder: Path = "/fabricator/"
+    installation_folder: Path = INSTALLATION_FOLDER
     key: str = None
 
 
@@ -96,13 +98,20 @@ def _load_settings():
     return settings
 
 
+def _check_key(settings: Settings):
+    if settings.key is None:
+        click.secho("----------------------------------", bg=ERROR_COLOR)
+        click.secho("Error: Encryption key not provided", bg=ERROR_COLOR)
+        click.secho("----------------------------------", bg=ERROR_COLOR)
+        click.secho("Please provide an encryption key:", bg=ERROR_COLOR)
+        click.secho("enter <fab --help> to get assistance", bg=ERROR_COLOR)
+        raise Abort()
+
+
+# def _decrypt(fabfile:Path)
+
+
 @click.command()
-@click.option(
-    "--fabfile",
-    default=None,
-    help="Ease binary. Use when internet connection is not available.",
-    type=click.Path(exists=True),
-)
 @click.option(
     "--clean",
     default=False,
@@ -115,50 +124,38 @@ def _load_settings():
     help="Always download the binary. Overwriting an existing one.",
     is_flag=True,
 )
-def install(fabfile, clean, force_download):
+def install(clean, force_download):
 
-    EASE_FOLDER.mkdir(exist_ok=True)
+    EASE_CONFIG_FOLDER.mkdir(exist_ok=True)
 
     settings: Settings = _load_settings()
 
-    if settings.key is None:
-        click.secho("----------------------------------", bg="red")
-        click.secho("Error: Encryption key not provided", bg="red")
-        click.secho("----------------------------------", bg="red")
-        click.secho("Please provide an encryption key:", fg="cyan")
-        click.secho("enter <fab --help> to get assistance", fg="cyan")
-        click.secho("EXITING", bg=ERROR_COLOR)
-        return
+    _check_key(settings)
 
-    if fabfile is None and settings.download_url is None:
-        click.secho("---------------------------", bg="red")
-        click.secho("Error: No binary available.", bg="red")
-        click.secho("---------------------------", bg="red")
+    if settings.download_url is None:
+        click.secho("-----------------------", bg="red")
+        click.secho("Error: No URL provided.", bg="red")
+        click.secho("-----------------------", bg="red")
         click.echo("")
-        click.secho("Please provide a binary location OR a download URL.")
         click.secho("Use <fab --help> for help.")
-        click.secho("EXITING", bg=ERROR_COLOR)
-        return
+        raise Abort()
 
     _make_temp_folder()
 
-    if fabfile is not None:
-        fabfile = Path(fabfile)
-    else:
-        fabfile = _download_fabfile(
-            settings.download_url, force_download=force_download
-        )
+    fabfile = _download_fabfile(
+        settings.download_url, force_download=force_download
+    )
 
-    decrypted_file = _decrypt(fabfile, settings.key)
+    _install(fabfile, clean, settings)
 
+
+def _install(fabfile: Path, clean, settings):
     if clean:
         _clean(settings.installation_folder)
 
-    try:
-        _extract(decrypted_file, settings.installation_folder)
-    except Exception as err:
-        click.secho("ERROR extracting archive")
-        click.echo(err)
+    decrypted_file = _decrypt(fabfile, settings.key)
+
+    _extract(decrypted_file, settings.installation_folder)
 
     click.secho("Finished successfully.", fg="green")
     click.secho(
@@ -167,6 +164,21 @@ def install(fabfile, clean, force_download):
         ),
         fg=INFO_COLOR,
     )
+
+
+@click.command()
+@click.argument("file", type=click.Path(exists=True))
+def from_file(file):
+    fabfile = Path(file)
+
+    EASE_CONFIG_FOLDER.mkdir(exist_ok=True)
+
+    settings: Settings = _load_settings()
+
+    _check_key(settings)
+    _make_temp_folder()
+
+    _install(fabfile, True, settings)
 
 
 @click.command()
@@ -263,7 +275,7 @@ def _download_file(
 
 
 @working_done("Decrypting...")
-def _decrypt(aes_file: Path, key):
+def _decrypt(aes_file: Path, key) -> Path:
     buffer_size = 64 * 1024
 
     temp_file = TEMP_FOLDER.joinpath("archive.ease")
@@ -293,9 +305,8 @@ def _extract(archive, output_folder):
 
     except Exception as err:
         LOGGER.exception(err)
-        raise FatalEchoException(
-            "An unknown error occurred. Please contact support."
-        )
+        click.secho(err)
+        raise Abort()
 
 
 if __name__ == "__main__":
