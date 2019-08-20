@@ -180,7 +180,7 @@ def install(ctx, clean):
 def download(ctx):
     """Use download location."""
     settings = ctx.obj.get("settings")
-    file_settings:"_FileSettings" = ctx.obj.get("file_settings")
+    file_settings: "_FileSettings" = ctx.obj.get("file_settings")
 
     if settings.download_url is None:
         click.secho("-----------------------", bg="red")
@@ -189,10 +189,14 @@ def download(ctx):
         click.echo("")
         click.secho("Use <fab --help> for help.")
         raise Abort()
-
-    version_file = download_version_file(settings.download_url, file_settings.version_file)
+    click.secho(
+        "downloading version file {}".format(str(file_settings.version_file))
+    )
+    version_file = download_version_file(
+        settings.download_url, file_settings.version_file
+    )
     binary_url = _get_latest_url(settings, version_file)
-
+    click.secho("downloading binary {}".format(str(binary_url)))
     fabfile = file_settings.temp_installation_folder.joinpath(
         "fabricator.encrypt"
     )

@@ -49,7 +49,7 @@ def _download_file(
     if request.status_code not in (200, 201, 202):
         click.secho("ERROR: Unable to reach download target")
         _LOGGER.error(request)
-        raise Abort()
+        raise Abort("Cannot find %s", url)
 
     size = int(request.headers.get("content-length"))
     label = label.format(
