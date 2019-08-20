@@ -244,13 +244,13 @@ def set_url(download_url: str):
 
 @click.version_option()
 @click.group()
-def cli():
+def main():
     """Fabtool main entrypoint"""
 
 
-cli.add_command(install)
-cli.add_command(set_key)
-cli.add_command(set_url)
+main.add_command(install)
+main.add_command(set_key)
+main.add_command(set_url)
 
 if __name__ == "__main__":
-    sys.exit(cli())  # pragma: no cover
+    sys.exit(main())  # pragma: no cover

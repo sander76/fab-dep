@@ -13,7 +13,7 @@ from fab_deploy.cli import (
     _clean,
     _install,
     _get_latest_url,
-    cli,
+    main,
 )
 from fab_deploy.const import _Settings, _FileSettings
 from fab_deploy.download import download_fabfile, download_version_file
@@ -186,7 +186,7 @@ def test_cli_file(
     mock_settings, dummy_file_settings, dummy_settings, mock_install_function
 ):
     runner = CliRunner()
-    result = runner.invoke(cli, ["install", "from-file", str(FAB_FILE)])
+    result = runner.invoke(main, ["install", "from-file", str(FAB_FILE)])
 
     mock_install_function.assert_called_with(
         FAB_FILE,
@@ -211,7 +211,7 @@ def test_cli_download(
     )
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["install", "download"])
+    result = runner.invoke(main, ["install", "download"])
 
     assert dummy_file_settings.version_file.exists()
 
