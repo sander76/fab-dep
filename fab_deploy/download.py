@@ -1,3 +1,5 @@
+"""Download things."""
+
 import logging
 from pathlib import Path
 from urllib.parse import urljoin
@@ -6,25 +8,19 @@ import click
 import requests
 from click import Abort
 
-from fab_deploy.const import TEMP_FOLDER, VERSION_FILE, LOGGER, INFO_COLOR
+from fab_deploy.const import INFO_COLOR
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _download_fabfile(
-    download_url: str, force_download=False, temp_folder=TEMP_FOLDER
-):
+def download_fabfile(download_url: str, dest: Path, force_download=True):
 
-    return _download_file(
-        download_url,
-        temp_folder.joinpath("fabricator.ease"),
-        force_download=force_download,
-    )
+    return _download_file(download_url, dest, force_download=force_download)
 
 
-def _download_version_file(download_url: str, version_file=VERSION_FILE):
+def download_version_file(download_url: str, dest: Path):
     version_url = urljoin(download_url, "version.json")
-    return _download_file(version_url, version_file, force_download=True)
+    return _download_file(version_url, dest, force_download=True)
 
 
 def _download_file(
@@ -47,12 +43,12 @@ def _download_file(
         request = requests.get(url, stream=True)
     except requests.exceptions.ConnectionError as err:
         click.secho("ERROR: Unable to make a connection")
-        LOGGER.exception(err)
+        _LOGGER.exception(err)
         raise Abort()
 
     if request.status_code not in (200, 201, 202):
         click.secho("ERROR: Unable to reach download target")
-        LOGGER.error(request)
+        _LOGGER.error(request)
         raise Abort()
 
     size = int(request.headers.get("content-length"))

@@ -7,7 +7,6 @@ import pytest
 
 
 #test_location = "http://localhost:8000/fabricator.ease"
-from tests.common import TEST_TEMP_FOLDER
 
 
 def _remove(path: Path) -> bool:
@@ -31,7 +30,6 @@ def clean():
     yield
 
     _wait = False
-    _wait = _remove(TEST_TEMP_FOLDER)
 
     if _wait:
         time.sleep(1)
