@@ -103,9 +103,7 @@ def _install(fabfile: Path, clean, settings, temp_folder: Path):
 
     click.secho("Finished successfully.", fg="green")
     click.secho(
-        "Fabricator tool can be found at: {}".format(
-            settings.installation_folder
-        ),
+        "Fabricator tool can be found at: {}".format(settings.installation_folder),
         fg=INFO_COLOR,
     )
 
@@ -143,6 +141,11 @@ def _clean(output_folder: Path):
         shutil.rmtree(output_folder)
     except FileNotFoundError:
         click.secho("Folder does not exist. Continueing", fg=INFO_COLOR)
+    except PermissionError:
+        click.secho(
+            "Unable to clear installation folder. Did you close the fabricator ?",
+            bg=ERROR_COLOR,
+        )
 
 
 @working_done("Extracting archive...")
@@ -158,10 +161,7 @@ def _extract(archive, output_folder):
 
 @click.group()
 @click.option(
-    "--clean",
-    default=False,
-    help="clear the installation folder first",
-    is_flag=True,
+    "--clean", default=False, help="clear the installation folder first", is_flag=True
 )
 @click.pass_context
 def install(ctx, clean):
@@ -189,17 +189,13 @@ def download(ctx):
         click.echo("")
         click.secho("Use <fab --help> for help.")
         raise Abort()
-    click.secho(
-        "downloading version file {}".format(str(file_settings.version_file))
-    )
+    click.secho("downloading version file {}".format(str(file_settings.version_file)))
     version_file = download_version_file(
         settings.download_url, file_settings.version_file
     )
     binary_url = _get_latest_url(settings, version_file)
     click.secho("downloading binary {}".format(str(binary_url)))
-    fabfile = file_settings.temp_installation_folder.joinpath(
-        "fabricator.encrypt"
-    )
+    fabfile = file_settings.temp_installation_folder.joinpath("fabricator.encrypt")
     download_fabfile(binary_url, fabfile, force_download=True)
 
     _install(fabfile, True, settings, file_settings.temp_installation_folder)
