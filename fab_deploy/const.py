@@ -46,17 +46,17 @@ class _Settings(BaseSettings):
     """
 
     download_url: str = None
-    installation_folder: Path = None
+    installation_folder: Path = Path.home() / "fabricator"
     key: str = None
 
-    @validator("installation_folder", pre=True, always=True)
-    def platform_default(cls, v, values, **kwargs):
-        """Set intallation folder depending on platform."""
-        if v is None:
-            if platform == "linux":
-                return Path("/usr/bin/fabricator/")
-            elif platform == "win32":
-                return Path.home() / "AppData" / "local" / "fabricator"
+    # @validator("installation_folder", pre=True, always=True)
+    # def platform_default(cls, v, values, **kwargs):
+    #     """Set intallation folder depending on platform."""
+    #     if v is None:
+    #         if platform == "linux":
+    #             return Path("/usr/bin/fabricator/")
+    #         elif platform == "win32":
+    #             return Path.home() / "AppData" / "local" / "fabricator"
 
 
 def save_settings(settings: _Settings, settings_file: Path):
