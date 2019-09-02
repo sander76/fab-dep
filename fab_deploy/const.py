@@ -1,8 +1,9 @@
 import json
 import logging
 from pathlib import Path
+from sys import platform
 
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel, BaseSettings, validator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +27,6 @@ class _FileSettings:
         return self.temp_installation_folder.joinpath("version.json")
 
 
-
 _file_settings = None
 
 
@@ -46,8 +46,17 @@ class _Settings(BaseSettings):
     """
 
     download_url: str = None
-    installation_folder: Path = (Path.home()).joinpath("fabricator")
+    installation_folder: Path = None
     key: str = None
+
+    @validator("installation_folder", pre=True, always=True)
+    def platform_default(cls, v, values, **kwargs):
+        """Set intallation folder depending on platform."""
+        if v is None:
+            if platform == "linux":
+                return Path("/usr/bin/fabricator/")
+            elif platform == "win32":
+                return Path.home() / "AppData" / "local" / "fabricator"
 
 
 def save_settings(settings: _Settings, settings_file: Path):

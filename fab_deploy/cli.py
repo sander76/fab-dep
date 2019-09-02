@@ -148,6 +148,8 @@ def _clean(output_folder: Path):
         )
 
 
+
+
 @working_done("Extracting archive...")
 def _extract(archive, output_folder):
     try:

@@ -8,7 +8,7 @@ import click
 import requests
 from click import Abort
 
-from fab_deploy.const import INFO_COLOR
+from fab_deploy.const import INFO_COLOR, ERROR_COLOR
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,9 +35,7 @@ def _download_file(
     if dest.exists():
         if not force_download:
 
-            if not click.confirm(
-                "File already exists. Replace {}?".format(dest)
-            ):
+            if not click.confirm("File already exists. Replace {}?".format(dest)):
                 return dest
     try:
         request = requests.get(url, stream=True)
@@ -49,17 +47,14 @@ def _download_file(
     if request.status_code not in (200, 201, 202):
         click.secho("ERROR: Unable to reach download target")
         _LOGGER.error(request)
-        raise Abort("Cannot find %s", url)
+        click.secho(f"Cannot find {url}", bg=ERROR_COLOR)
+        raise Abort()
 
     size = int(request.headers.get("content-length"))
-    label = label.format(
-        dest=dest, dest_basename=dest.name, size=size / 1024.0 / 1024
-    )
+    label = label.format(dest=dest, dest_basename=dest.name, size=size / 1024.0 / 1024)
     with click.open_file(dest, "wb") as f:
         content_iter = request.iter_content(chunk_size=chunk_size)
-        with click.progressbar(
-            content_iter, length=size / 1024, label=label
-        ) as bar:
+        with click.progressbar(content_iter, length=size / 1024, label=label) as bar:
             for chunk in bar:
                 if chunk:
                     f.write(chunk)

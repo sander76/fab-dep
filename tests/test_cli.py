@@ -65,6 +65,9 @@ def mock_settings(monkeypatch, dummy_settings, dummy_file_settings):
 def dummy_version_file(tmp_path):
     return tmp_path / "version.json"
 
+def test_settings():
+    settings = _Settings()
+    assert settings is not None
 
 def test_extract(dummy_file_settings):
 
