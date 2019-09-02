@@ -28,10 +28,9 @@ def _download_file(
     dest: Path,
     chunk_size=1024,
     force_download=False,
-    label="Downloading {dest_basename} ({size:.2f}MB)",
+    label="Downloading ({size:.2f}MB)",
 ) -> Path:
 
-    click.secho("Downloading binary...", fg=INFO_COLOR)
     if dest.exists():
         if not force_download:
 
