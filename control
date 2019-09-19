@@ -1,0 +1,8 @@
+Package: fab
+Version: 1.0
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Maintainer: s.teunissen
+Description: fabrication update tool
