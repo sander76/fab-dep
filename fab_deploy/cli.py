@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from urllib.parse import urljoin
 import click
+from . import __version__
 
 from click import Abort
 from pydantic import BaseSettings
@@ -244,7 +245,7 @@ def set_url(download_url: str):
     click.secho(download_url, fg="green")
 
 
-@click.version_option()
+@click.version_option(version=__version__)
 @click.group()
 def main():
     """Fabtool main entrypoint"""
