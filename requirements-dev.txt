@@ -1,5 +1,5 @@
-pytest = "*"
-wheel = "*"
-flit = "*"
-responses = "*"
-pyinstaller = "*"
+pytest
+wheel
+flit
+responses
+pyinstaller
