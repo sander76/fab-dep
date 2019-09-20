@@ -108,13 +108,13 @@ def deploy_linux():
 @click.argument("passw")
 def publish_linux(user, passw):
 
-    assert deploy_linux.exists()
+    assert debian_file.exists()
     click.secho("Connecting...", fg=CLICK_INFO_COLOR, nl=False)
     connection = _ftps_connect("motorisation.hde.nl", user, passw)
     click.secho("done", fg=CLICK_INFO_COLOR)
 
     _upload(
-        deploy_linux, "/motorisation.hde.nl/bin/fabricator/ubuntu18_04/", connection
+        debian_file, "/motorisation.hde.nl/bin/fabricator/ubuntu18_04/", connection
     )
 
 
