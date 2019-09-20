@@ -10,7 +10,11 @@ _LOGGER = logging.getLogger(__name__)
 from fab_deploy import __version__
 
 app_folder = Path("/app/fab-dep/")
-package_folder = Path("/app/fab/usr/bin/")
+
+package_folder = Path("/app/fab/usr/")
+bin_folder = package_folder / "bin"
+
+
 package_config_folder = Path("/app/fab/DEBIAN")
 
 
@@ -46,16 +50,16 @@ def _run(*args, cwd=app_folder, capture_output=True):
 
 def deploy_linux():
 
-    shutil.rmtree(package_folder, ignore_errors=True)
+    shutil.rmtree(bin_folder, ignore_errors=True)
     shutil.rmtree(package_config_folder, ignore_errors=True)
 
     package_config_folder.mkdir(exist_ok=True,parents=True)
-    package_folder.mkdir(exist_ok=True,parents=True)
+    # package_folder.mkdir(exist_ok=True,parents=True)
 
     _run("git", "pull")
 
-    _run("pipenv", "lock", "-r", ">", "reqs.txt")
-    _run("pipenv", "lock", "-r", "-d", ">", "reqs-dev.txt")
+    _run("pipenv", "lock", "-r", "> reqs.txt")
+    _run("pipenv", "lock", "-r", "-d", "> reqs-dev.txt")
 
     _run("python3.7", "-m", "pip", "install", "-r", "reqs.txt")
 
