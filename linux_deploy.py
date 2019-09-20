@@ -36,23 +36,32 @@ def make_control_file():
         fl.write("\n")
 
 
+def _run(*args, cwd=app_folder, capture_output=True):
+    subprocess.run(args, cwd=cwd, capture_output=capture_output)
+
+
 def deploy_linux():
 
     shutil.rmtree(package_folder, ignore_errors=True)
     shutil.rmtree(package_config_folder, ignore_errors=True)
 
-    subprocess.run(["git pull"], cwd=app_folder)
+    _run("git", "pull")
 
-    subprocess.run(["pipenv lock -r > reqs.txt"], cwd=app_folder)
-    subprocess.run(["pipenv lock -r -d > reqs-dev.txt"], cwd=app_folder)
+    _run("pipenv", "lock", "-r", ">", "reqs.txt")
+    _run("pipenv", "lock", "-r", "-d", ">", "reqs-dev.txt")
 
-    subprocess.run(["python3.7 -m pip install -r reqs.txt"], cwd=app_folder)
-    subprocess.run(["python3.7 -m pip install -r reqs-dev.txt"], cwd=app_folder)
+    _run("python3.7", "-m", "pip", "install", "-r", "reqs.txt")
 
-    subprocess.run(["pyinstaller fab.spec"], cwd=app_folder)
+    _run("python3.7", "-m", "pip", "install", "-r", "reqs-dev.txt")
+
+    _run("pyinstaller", "fab.spec")
 
     make_control_file()
 
     shutil.copytree(app_folder.joinpath("dist", "fab"), package_folder)
 
-    subprocess.run(["dpkg-deb --build fab"], cwd=Path("/app/"))
+    _run("dpkg-deb --build fab")
+
+
+if __name__ == "__main__":
+    deploy_linux()
