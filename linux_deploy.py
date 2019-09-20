@@ -41,18 +41,18 @@ def deploy_linux():
     shutil.rmtree(package_folder, ignore_errors=True)
     shutil.rmtree(package_config_folder, ignore_errors=True)
 
-    subprocess.call("git pull", cwd=app_folder)
+    subprocess.run(["git pull"], cwd=app_folder)
 
-    subprocess.call("pipenv lock -r > reqs.txt", cwd=app_folder)
-    subprocess.call("pipenv lock -r -d > reqs-dev.txt", cwd=app_folder)
+    subprocess.run(["pipenv lock -r > reqs.txt"], cwd=app_folder)
+    subprocess.run(["pipenv lock -r -d > reqs-dev.txt"], cwd=app_folder)
 
-    subprocess.call("python3.7 -m pip install -r reqs.txt", cwd=app_folder)
-    subprocess.call("python3.7 -m pip install -r reqs-dev.txt", cwd=app_folder)
+    subprocess.run(["python3.7 -m pip install -r reqs.txt"], cwd=app_folder)
+    subprocess.run(["python3.7 -m pip install -r reqs-dev.txt"], cwd=app_folder)
 
-    subprocess.call("pyinstaller fab.spec", cwd=app_folder)
+    subprocess.run(["pyinstaller fab.spec"], cwd=app_folder)
 
     make_control_file()
 
     shutil.copytree(app_folder.joinpath("dist", "fab"), package_folder)
 
-    subprocess.call("dpkg-deb --build fab", cwd=Path("/app/"))
+    subprocess.run(["dpkg-deb --build fab"], cwd=Path("/app/"))
