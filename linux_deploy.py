@@ -3,7 +3,8 @@ import shutil
 from pathlib import Path
 import os
 import subprocess
-from subprocess import PIPE
+
+# from subprocess import PIPE, Popen
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,10 +43,12 @@ def make_control_file():
 
 
 def _run(*args, cwd=app_folder, capture_output=True):
-    process = subprocess.run(args, cwd=cwd, capture_output=capture_output, text=True)
-    print(process.stdout)
-    print(process.stderr)
-    print(process.returncode)
+    process = subprocess.run(
+        args, cwd=cwd, capture_output=capture_output, encoding="utf8"
+    )
+    print(process)
+
+    return process.stdout
 
 
 def deploy_linux():
@@ -53,13 +56,18 @@ def deploy_linux():
     shutil.rmtree(bin_folder, ignore_errors=True)
     shutil.rmtree(package_config_folder, ignore_errors=True)
 
-    package_config_folder.mkdir(exist_ok=True,parents=True)
+    package_config_folder.mkdir(exist_ok=True, parents=True)
     # package_folder.mkdir(exist_ok=True,parents=True)
 
     _run("git", "pull")
 
-    _run("pipenv", "lock", "-r", "> reqs.txt")
-    _run("pipenv", "lock", "-r", "-d", "> reqs-dev.txt")
+    content = _run("pipenv", "lock", "-r")
+    with open(app_folder / "reqs.txt", "w") as fl:
+        fl.write(content)
+
+    content = _run("pipenv", "lock", "-r", "-d")
+    with open(app_folder / "reqs-dev.txt", "w") as fl:
+        fl.write(content)
 
     _run("python3.7", "-m", "pip", "install", "-r", "reqs.txt")
 
