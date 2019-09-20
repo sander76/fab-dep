@@ -16,7 +16,7 @@ from PyInstaller.building.api import COLLECT
 block_cipher = None
 
 
-a = Analysis(['fab.py'],
+a = Analysis(['fab_deploy/cli.py'],
              pathex=['C:\\Users\\sander\\Dropbox\\data\\aptana\\fab-dep'],
              binaries=[],
              datas=[],

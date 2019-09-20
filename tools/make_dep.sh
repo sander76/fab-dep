@@ -3,7 +3,7 @@
 rm /app/fab/usr/bin/* -r
 rm /app/fab/DEBIAN/* -r
 
-cd /app/fab-deb
+cd /app/fab-dep
 
 git pull
 

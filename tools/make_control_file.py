@@ -24,6 +24,7 @@ def make_version_file():
 
     with open("/app/fab/DEBIAN/control", "W") as fl:
         fl.write(contents)
+        fl.write("\n")
 
 
 if __name__ == "__main__":
