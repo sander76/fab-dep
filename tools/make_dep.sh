@@ -17,7 +17,7 @@ echo Running pyinstaller
 
 pyinstaller fab.spec
 
-python3.7 /app/fab-dep/make_control_file.py
+python3.7 /app/fab-dep/tools/make_control_file.py
 
 cp /app/fab-dep/dist/fab/* /app/fab/usr/bin/ -r
 

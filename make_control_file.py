@@ -22,7 +22,7 @@ dct = {
 def make_version_file():
     contents = "\n".join("{}: {}".format(key, value) for key, value in dct.items())
 
-    with open("/app/fab/DEBIAN/control", "W") as fl:
+    with open("/app/fab/DEBIAN/control", "w") as fl:
         fl.write(contents)
         fl.write("\n")
 
