@@ -127,4 +127,4 @@ cli.add_command(deploy_linux)
 cli.add_command(publish_linux)
 
 if __name__ == "__main__":
-    deploy_linux()
+    cli()
