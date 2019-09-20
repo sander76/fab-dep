@@ -10,6 +10,7 @@ RUN python3.7 -m pip install wheel
 # required for aes-encrypt
 RUN python3.7 -m pip install cffi
 RUN python3.7 -m pip install pipenv
+RUN python3.7 -m pip install click==7.0.0
 
 WORKDIR /app
 
