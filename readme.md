@@ -20,10 +20,9 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 ### Linux
 
 - Run the docker container: `docker run -it --entrypoint /bin/bash bionic-fabtool`
-- Update the repo
-- run the script: `. tools/make_dep.sh`
-- upload the file: `python ftp.py upload-file motorisation.hde.nl <user> <pass> /app/fab.deb /motorisation.hde.nl/bin/fabricator/ubuntu18_04/`
-
+- Update the repo `git pull`
+- create a debian distributable: `python3.7 deploy.py deploy_linux`
+- upload the file: `python3.7 deploy.py publish_linux <user> <pass>`
 
 # Building:
 
