@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 import os
 import subprocess
+from subprocess import PIPE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,13 +38,19 @@ def make_control_file():
 
 
 def _run(*args, cwd=app_folder, capture_output=True):
-    subprocess.run(args, cwd=cwd, capture_output=capture_output)
+    process = subprocess.run(args, cwd=cwd, capture_output=capture_output, text=True)
+    print(process.stdout)
+    print(process.stderr)
+    print(process.returncode)
 
 
 def deploy_linux():
 
     shutil.rmtree(package_folder, ignore_errors=True)
     shutil.rmtree(package_config_folder, ignore_errors=True)
+
+    package_config_folder.mkdir(exist_ok=True,parents=True)
+    package_folder.mkdir(exist_ok=True,parents=True)
 
     _run("git", "pull")
 
