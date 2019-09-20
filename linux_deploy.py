@@ -77,9 +77,9 @@ def deploy_linux():
 
     make_control_file()
 
-    shutil.copytree(app_folder.joinpath("dist", "fab"), package_folder)
+    shutil.copytree(app_folder.joinpath("dist", "fab"), bin_folder)
 
-    _run("dpkg-deb --build fab")
+    _run("dpkg-deb", "--build", "fab", cwd=Path("/app/"))
 
 
 if __name__ == "__main__":
