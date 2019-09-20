@@ -2,7 +2,14 @@ import logging
 import shutil
 from pathlib import Path
 import os
+import click
 import subprocess
+
+from tools.ftp import _ftps_connect, _upload
+
+CLICK_INFO_COLOR = "bright_yellow"
+CLICK_OK_COLOR = "green"
+CLICK_ERROR_COLOR = "red"
 
 # from subprocess import PIPE, Popen
 
@@ -11,10 +18,10 @@ _LOGGER = logging.getLogger(__name__)
 from fab_deploy import __version__
 
 app_folder = Path("/app/fab-dep/")
-
+dist_folder = app_folder / "dist"
 package_folder = Path("/app/fab/usr/")
 bin_folder = package_folder / "bin"
-
+debian_file = Path("/app/fab.deb")
 
 package_config_folder = Path("/app/fab/DEBIAN")
 
@@ -46,18 +53,19 @@ def _run(*args, cwd=app_folder, capture_output=True):
     process = subprocess.run(
         args, cwd=cwd, capture_output=capture_output, encoding="utf8"
     )
-    print(process)
+    if not process.returncode == 0:
+        print(process)
 
     return process.stdout
 
 
-def deploy_linux():
-
+def _deploy_linux():
     shutil.rmtree(bin_folder, ignore_errors=True)
     shutil.rmtree(package_config_folder, ignore_errors=True)
+    shutil.rmtree(dist_folder, ignore_errors=True)
 
+    dist_folder.mkdir(exist_ok=True, parents=True)
     package_config_folder.mkdir(exist_ok=True, parents=True)
-    # package_folder.mkdir(exist_ok=True,parents=True)
 
     _run("git", "pull")
 
@@ -80,6 +88,26 @@ def deploy_linux():
     shutil.copytree(app_folder.joinpath("dist", "fab"), bin_folder)
 
     _run("dpkg-deb", "--build", "fab", cwd=Path("/app/"))
+
+
+@click.command()
+def deploy_linux():
+    _deploy_linux()
+
+
+@click.command()
+@click.argument("user")
+@click.argument("passw")
+def publish(user, passw):
+
+    assert deploy_linux.exists()
+    click.secho("Connecting...", fg=CLICK_INFO_COLOR, nl=False)
+    connection = _ftps_connect("motorisation.hde.nl", user, passw)
+    click.secho("done", fg=CLICK_INFO_COLOR)
+
+    _upload(
+        deploy_linux, "/motorisation.hde.nl/bin/fabricator/ubuntu18_04/", connection
+    )
 
 
 if __name__ == "__main__":
