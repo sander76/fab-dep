@@ -1,22 +1,28 @@
 #!/bin/bash
 
+rm /app/fab/usr/bin/* -r
+rm /app/fab/DEBIAN/* -r
+
 cd /app/fab-deb
 
 git pull
 
-python3.7 -m pip install /app/fab-dep/requirements.txt
-python3.7 -m pip install /app/fab-dep/requirements-dev.txt
+pipenv lock -r > reqs.txt
+pipenv lock -r -d > reqs-dev.txt
+
+python3.7 -m pip install -r /app/fab-dep/reqs.txt
+python3.7 -m pip install -r /app/fab-dep/reqs-dev.txt
 
 echo Running pyinstaller
 
-cd /app/fab-dep
-
 pyinstaller fab.spec
 
-rm /app/fab/usr/bin/* -r
+python3.7 /app/fab-dep/make_control_file.py
 
 cp /app/fab-dep/dist/fab/* /app/fab/usr/bin/ -r
-cp /app/fab-dep/control /app/fab/DEBIAN/
+
+
+#cp /app/fab-dep/control /app/fab/DEBIAN/
 
 cd /app
 dpkg-deb --build fab

@@ -1,3 +1,4 @@
+# debian package script. Will be copied to the deployment folder.
 Package: fab
 Version: 1.0
 Section: custom
