@@ -24,10 +24,26 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 - create a debian distributable: `python3.7 deploy.py deploy_linux`
 - upload the file: `python3.7 deploy.py publish_linux <user> <pass>`
 
-# Building:
+## Installing
+
+### Windows
+
+- Download the zipped file: https://motorisation.hde.nl/bin/fabricator/win10/fab.zip
+- Create a `fab` folder located in the local user folder
+    powershell: `md ~/fab` 
+- Extract the contents of the zip file into this folder.
+- Add this folder to the *User environment* variable.
+- Verify the installation by opening a powershell session and enter "fab". The tool should run.
+
+### Linux
+
+- Download the deb file: `wget https://motorisation.hde.nl/bin/fabricator/ubuntu18_04/fab.deb ~/Downloads/
+- From the terminal: `dpkg -i ~/Downloads/fab.deb`
+- to test the installation enter fab from the terminal.
+
+## Building a wheel:
 
 `flit build`
-
 
 ## installing from git:
 

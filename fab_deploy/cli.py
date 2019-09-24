@@ -234,7 +234,7 @@ def set_key(key: str):
 @click.command()
 @click.argument("download_url")
 def set_url(download_url: str):
-    """Set a URL to check for updates."""
+    """Provide the full URL to check for updates."""
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
 

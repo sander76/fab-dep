@@ -49,15 +49,16 @@ class _Settings(BaseSettings):
     installation_folder: Path = Path.home() / "fabricator"
     key: str = None
 
-    # @validator("installation_folder", pre=True, always=True)
-    # def platform_default(cls, v, values, **kwargs):
-    #     """Set intallation folder depending on platform."""
-    #     if v is None:
-    #         if platform == "linux":
-    #             return Path("/usr/bin/fabricator/")
-    #         elif platform == "win32":
-    #             return Path.home() / "AppData" / "local" / "fabricator"
-
+    @validator("download_url", pre=True, always=True)
+    def platform_default(cls, v, values, **kwargs):
+        """Set download url depending on platform."""
+        if v is None:
+            if platform == "linux":
+                return "https://motorisation.hde.nl/bin/fabricator/ubuntu18_04/"
+            elif platform == "win32":
+                return "https://motorisation.hde.nl/bin/fabricator/win10/"
+        else:
+            return v
 
 def save_settings(settings: _Settings, settings_file: Path):
     """Save app settings."""
