@@ -13,7 +13,7 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 - Goto the root of this project
 - Make sure the virtualenv is active (pipenv shell)
 - `pyinstaller fab.spec`
-- The installer will be built in the `dist` folder
+- The installer will be built in the `dist/fab` folder
 - Zip up the `fab` folder to fab.zip
 - Upload it to: https://motorisation.hde.nl/bin/fabricator/win10/fab.zip
 
@@ -29,9 +29,7 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 ### Windows
 
 - Download the zipped file: https://motorisation.hde.nl/bin/fabricator/win10/fab.zip
-- Create a `fab` folder located in the local user folder
-    powershell: `md ~/fab` 
-- Extract the contents of the zip file into this folder.
+- Extract the contents of the zip file into the local user folder. (this will create a `fab` folder inside the user folder.
 - Add this folder to the *User environment* variable.
 - Verify the installation by opening a powershell session and enter "fab". The tool should run.
 
