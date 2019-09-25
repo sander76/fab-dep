@@ -19,6 +19,7 @@ from fab_deploy.const import (
     get_file_settings,
     save_settings,
 )
+import fab_deploy.shortcuts as shortcuts
 from fab_deploy.crypto import decryptFile
 from fab_deploy.download import download_fabfile, download_version_file
 
@@ -85,15 +86,7 @@ def _check_key(settings: "_Settings"):
         raise Abort()
 
 
-# def _validate_folders(
-#     temp_folder: Path, installation_folder: Path, ease_config_folder: Path
-# ):
-#     temp_folder.mkdir(exist_ok=True, parents=True)
-#     installation_folder.mkdir(exist_ok=True, parents=True)
-#     ease_config_folder.mkdir(exist_ok=True, parents=True)
-
-
-def _install(fabfile: Path, clean, settings, temp_folder: Path):
+def _install(fabfile: Path, clean, settings, temp_folder: Path, copy_shortcuts):
     if clean:
         _clean(settings.installation_folder)
 
@@ -107,6 +100,8 @@ def _install(fabfile: Path, clean, settings, temp_folder: Path):
         "Fabricator tool can be found at: {}".format(settings.installation_folder),
         fg=INFO_COLOR,
     )
+    if copy_shortcuts:
+        shortcuts.copy_shortcuts(settings.installation_folder)
 
 
 def _get_latest_url(settings: "_Settings", json_file) -> str:
@@ -149,8 +144,6 @@ def _clean(output_folder: Path):
         )
 
 
-
-
 @working_done("Extracting archive...")
 def _extract(archive, output_folder):
     try:
@@ -166,14 +159,21 @@ def _extract(archive, output_folder):
 @click.option(
     "--clean", default=False, help="clear the installation folder first", is_flag=True
 )
+@click.option(
+    "--shortcut", default=False, help="make app shortcuts to the desktop", is_flag=True
+)
 @click.pass_context
-def install(ctx, clean):
+def install(ctx, clean, shortcut):
     """Install the fabricator tool."""
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
 
     # ctx.file_settings = file_settings
-    ctx.obj = {"settings": settings, "file_settings": file_settings}
+    ctx.obj = {
+        "settings": settings,
+        "file_settings": file_settings,
+        "shortcut": shortcut,
+    }
 
     _check_key(settings)
 
@@ -201,7 +201,11 @@ def download(ctx):
     fabfile = file_settings.temp_installation_folder.joinpath("fabricator.encrypt")
     download_fabfile(binary_url, fabfile, force_download=True)
 
-    _install(fabfile, True, settings, file_settings.temp_installation_folder)
+    copy_shortcut = ctx.obj.get("shortcut")
+
+    _install(
+        fabfile, True, settings, file_settings.temp_installation_folder, copy_shortcut
+    )
 
 
 @install.command()
@@ -214,7 +218,11 @@ def from_file(ctx, file):
     settings: "_Settings" = ctx.obj.get("settings")
     file_settings: "_FileSettings" = ctx.obj.get("file_settings")
 
-    _install(fabfile, True, settings, file_settings.temp_installation_folder)
+    copy_shortcut = ctx.obj.get("shortcut")
+
+    _install(
+        fabfile, True, settings, file_settings.temp_installation_folder, copy_shortcut
+    )
 
 
 @click.command()

@@ -60,6 +60,7 @@ class _Settings(BaseSettings):
         else:
             return v
 
+
 def save_settings(settings: _Settings, settings_file: Path):
     """Save app settings."""
     with open(settings_file, "w") as fl:

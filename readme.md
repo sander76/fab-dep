@@ -21,16 +21,14 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 
 - Run the docker container: `docker run -it --entrypoint /bin/bash bionic-fabtool`
 - Update the repo `git pull`
-- create a debian distributable: `python3.7 deploy.py deploy_linux`
-- upload the file: `python3.7 deploy.py publish_linux <user> <pass>`
+- create a debian distributable: `python3.7 deploy.py deploy-linux`
+- upload the file: `python3.7 deploy.py publish-linux <user> <pass>`
 
 ## Installing
 
 ### Windows
 
-- Download the zipped file: https://motorisation.hde.nl/bin/fabricator/win10/fab.zip
-- Extract the contents of the zip file into the local user folder. (this will create a `fab` folder inside the user folder.
-- Add this folder to the *User environment* variable.
+- Download the zipped file: https://motorisation.hde.nl/bin/fabricator/win10/fabtool-setup.exe and run it.
 - Verify the installation by opening a powershell session and enter "fab". The tool should run.
 
 ### Linux
