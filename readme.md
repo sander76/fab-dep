@@ -14,8 +14,8 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 - Make sure the virtualenv is active (pipenv shell)
 - `pyinstaller fab.spec`
 - The installer will be built in the `dist/fab` folder
-- Zip up the `fab` folder to fab.zip
-- Upload it to: https://motorisation.hde.nl/bin/fabricator/win10/fab.zip
+- Run the inno setup script located in the tools folder and compile
+- Upload it to: https://motorisation.hde.nl/bin/fabricator/win10/
 
 ### Linux
 
@@ -33,8 +33,8 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 
 ### Linux
 
-- Download the deb file: `wget https://motorisation.hde.nl/bin/fabricator/ubuntu18_04/fab.deb ~/Downloads/
-- From the terminal: `dpkg -i ~/Downloads/fab.deb`
+- Download the deb file: `wget https://motorisation.hde.nl/bin/fabricator/ubuntu18_04/fab.deb ~/Downloads/`
+- From the terminal: `sudo dpkg -i ~/Downloads/fab.deb`
 - to test the installation enter fab from the terminal.
 
 ## Building a wheel:

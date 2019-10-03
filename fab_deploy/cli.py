@@ -7,6 +7,8 @@ import logging
 from pathlib import Path
 from urllib.parse import urljoin
 import click
+
+from fab_deploy.bootstrap import execute_bootstrap
 from . import __version__
 
 from click import Abort
@@ -19,7 +21,7 @@ from fab_deploy.const import (
     get_file_settings,
     save_settings,
 )
-import fab_deploy.shortcuts as shortcuts
+
 from fab_deploy.crypto import decryptFile
 from fab_deploy.download import download_fabfile, download_version_file
 
@@ -86,7 +88,7 @@ def _check_key(settings: "_Settings"):
         raise Abort()
 
 
-def _install(fabfile: Path, clean, settings, temp_folder: Path, copy_shortcuts):
+def _install(fabfile: Path, clean, settings, temp_folder: Path, bootstrap):
     if clean:
         _clean(settings.installation_folder)
 
@@ -100,8 +102,9 @@ def _install(fabfile: Path, clean, settings, temp_folder: Path, copy_shortcuts):
         "Fabricator tool can be found at: {}".format(settings.installation_folder),
         fg=INFO_COLOR,
     )
-    if copy_shortcuts:
-        shortcuts.copy_shortcuts(settings.installation_folder)
+    if bootstrap:
+        # do bootstrap command
+        execute_bootstrap(settings.installation_folder)
 
 
 def _get_latest_url(settings: "_Settings", json_file) -> str:
@@ -159,11 +162,9 @@ def _extract(archive, output_folder):
 @click.option(
     "--clean", default=False, help="clear the installation folder first", is_flag=True
 )
-@click.option(
-    "--shortcut", default=False, help="make app shortcuts to the desktop", is_flag=True
-)
+@click.option("--bootstrap", default=False, help="bootstrap the app", is_flag=True)
 @click.pass_context
-def install(ctx, clean, shortcut):
+def install(ctx, clean, bootstrap):
     """Install the fabricator tool."""
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
@@ -172,7 +173,7 @@ def install(ctx, clean, shortcut):
     ctx.obj = {
         "settings": settings,
         "file_settings": file_settings,
-        "shortcut": shortcut,
+        "bootstrap": bootstrap,
     }
 
     _check_key(settings)
@@ -201,11 +202,9 @@ def download(ctx):
     fabfile = file_settings.temp_installation_folder.joinpath("fabricator.encrypt")
     download_fabfile(binary_url, fabfile, force_download=True)
 
-    copy_shortcut = ctx.obj.get("shortcut")
+    bootstrap = ctx.obj.get("bootstrap")
 
-    _install(
-        fabfile, True, settings, file_settings.temp_installation_folder, copy_shortcut
-    )
+    _install(fabfile, True, settings, file_settings.temp_installation_folder, bootstrap)
 
 
 @install.command()
@@ -218,11 +217,9 @@ def from_file(ctx, file):
     settings: "_Settings" = ctx.obj.get("settings")
     file_settings: "_FileSettings" = ctx.obj.get("file_settings")
 
-    copy_shortcut = ctx.obj.get("shortcut")
+    bootstrap = ctx.obj.get("bootstrap")
 
-    _install(
-        fabfile, True, settings, file_settings.temp_installation_folder, copy_shortcut
-    )
+    _install(fabfile, True, settings, file_settings.temp_installation_folder, bootstrap)
 
 
 @click.command()
@@ -253,6 +250,14 @@ def set_url(download_url: str):
     click.secho(download_url, fg="green")
 
 
+@click.command()
+def bootstrap():
+    """Prepare the fabricator app for usage."""
+    file_settings = get_file_settings()
+    settings = load_settings(file_settings.config_file)
+    execute_bootstrap(settings.installation_folder)
+
+
 @click.version_option(version=__version__)
 @click.group()
 def main():
@@ -262,6 +267,7 @@ def main():
 main.add_command(install)
 main.add_command(set_key)
 main.add_command(set_url)
+main.add_command(bootstrap)
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover

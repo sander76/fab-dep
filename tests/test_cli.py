@@ -150,7 +150,7 @@ def test__install(dummy_settings, mock_settings, dummy_file_settings):
         FAB_FILE,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder,
+        dummy_file_settings.temp_installation_folder,bootstrap=False
     )
 
     files = list(dummy_settings.installation_folder.glob("**/*.*"))
@@ -195,7 +195,7 @@ def test_cli_file(
         FAB_FILE,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder,
+        dummy_file_settings.temp_installation_folder,False
     )
     assert result.exit_code == 0
 
@@ -228,7 +228,7 @@ def test_cli_download(
         fab_encrypted,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder,
+        dummy_file_settings.temp_installation_folder,False
     )
 
     assert result.exit_code == 0
