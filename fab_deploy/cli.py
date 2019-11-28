@@ -6,9 +6,11 @@ import shutil
 import sys
 import logging
 from pathlib import Path
+from sys import platform
 from time import sleep
 from urllib.parse import urljoin
 import click
+import psutil
 from click import Abort
 
 from fab_deploy.bootstrap import execute_bootstrap
@@ -24,6 +26,9 @@ from fab_deploy.const import (
     load_settings,
     get_file_settings,
     save_settings,
+    KEY_PLATFORM,
+    KEY_WINDOWS,
+    KEY_LINUX,
 )
 
 from fab_deploy.crypto import decryptFile
@@ -74,6 +79,24 @@ def working_done(message, done="done."):
     return _echoer
 
 
+def check_running():
+    """check whether the FABtool is running."""
+    name = None
+    if KEY_PLATFORM == KEY_WINDOWS:
+        name = "fabricator.exe"
+    elif KEY_PLATFORM == KEY_LINUX:
+        name = "fabricator"
+    if name is None:
+        raise FatalEchoException("Tool should be running on either windows or linux")
+
+    for pid in psutil.pids():
+        p = psutil.Process(pid)
+        if p.name() == name:
+            raise FatalEchoException(
+                "FABtool is running. Please close it first before updating"
+            )
+
+
 def closed_delay(delay=5):
     for i in range(delay, 0, -1):
         print(f"closing in {i} seconds\r", end="", flush=True)
@@ -117,6 +140,7 @@ def _get_latest_url(settings: "_Settings", json_file) -> str:
 
 def fatal_handler(func):
     """Wrapper that catches fatal errors and displays them."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -183,12 +207,14 @@ def _extract(archive, output_folder):
 @fatal_handler
 def install(ctx, clean, bootstrap):
     """Install the fabricator tool."""
+    check_running()
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
-    ctx.obj = {}
-    ctx.obj["settings"] = settings
-    ctx.obj["file_settings"] = file_settings
-    ctx.obj["bootstrap"] = bootstrap
+    ctx.obj = {
+        "settings": settings,
+        "file_settings": file_settings,
+        "bootstrap": bootstrap,
+    }
 
     _check_key(settings)
 

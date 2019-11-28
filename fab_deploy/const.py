@@ -92,3 +92,8 @@ def load_settings(settings_file: Path) -> _Settings:
 INFO_COLOR = "cyan"
 OK_COLOR = "green"
 ERROR_COLOR = "bright_red"
+
+KEY_WINDOWS = "win32"
+KEY_LINUX = "linux"
+
+KEY_PLATFORM = platform
