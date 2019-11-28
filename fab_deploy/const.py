@@ -80,15 +80,6 @@ def load_settings(settings_file: Path) -> _Settings:
     settings.installation_folder.mkdir(exist_ok=True, parents=True)
     return settings
 
-
-# ease configuration files reside here
-# EASE_CONFIG_FOLDER = (Path.home()).joinpath(".ease")
-# # Final app is put here
-# # Deploy settings
-# FAB_DEPLOY_CONFIG = EASE_CONFIG_FOLDER.joinpath("fab-deploy.json")
-# TEMP_FOLDER = (Path.home()).joinpath(".ease", "bin")
-# VERSION_FILE = TEMP_FOLDER.joinpath("version.json")
-
 INFO_COLOR = "cyan"
 OK_COLOR = "green"
 ERROR_COLOR = "bright_red"
