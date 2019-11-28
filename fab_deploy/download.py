@@ -6,9 +6,11 @@ from urllib.parse import urljoin
 
 import click
 import requests
-from click import Abort
+
+# from click import Abort
 
 from fab_deploy.const import INFO_COLOR, ERROR_COLOR
+from fab_deploy.exceptions import FatalEchoException
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,15 +41,14 @@ def _download_file(
     try:
         request = requests.get(url, stream=True)
     except requests.exceptions.ConnectionError as err:
-        click.secho("ERROR: Unable to make a connection")
         _LOGGER.exception(err)
-        raise Abort()
+        raise FatalEchoException(f"Unable to make a connection {url}")
 
     if request.status_code not in (200, 201, 202):
-        click.secho("ERROR: Unable to reach download target")
         _LOGGER.error(request)
-        click.secho(f"Cannot find {url}", bg=ERROR_COLOR)
-        raise Abort()
+        raise FatalEchoException(
+            f"Unable to connect to {url} status code {request.status_code}"
+        )
 
     size = int(request.headers.get("content-length"))
     label = label.format(dest=dest, dest_basename=dest.name, size=size / 1024.0 / 1024)

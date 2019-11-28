@@ -40,6 +40,7 @@
 // ----------------------------------------------------------------------------
 
 procedure ModPath();
+
 var
 	oldpath:	String;
 	newpath:	String;

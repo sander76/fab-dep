@@ -17,6 +17,7 @@ from fab_deploy.cli import (
 )
 from fab_deploy.const import _Settings, _FileSettings
 from fab_deploy.download import download_fabfile, download_version_file
+from fab_deploy.exceptions import FatalEchoException
 from tests.common import HERE
 
 KEY = "abcABC"
@@ -100,7 +101,7 @@ def test_extract(dummy_file_settings):
 
 def test_decrypt_wrong_file(dummy_file_settings, clean):
     """No file to encrypt found"""
-    with pytest.raises(Abort):
+    with pytest.raises(FatalEchoException):
         _decrypt(
             FAKE_FAB_FILE, dummy_file_settings.temp_installation_folder, KEY
         )
@@ -127,7 +128,7 @@ def test_decrypt_wrong_key(dummy_file_settings, clean):
     archive_file = dummy_file_settings.temp_installation_folder.joinpath(
         "fabricator.archive"
     )
-    with pytest.raises(Abort):
+    with pytest.raises(FatalEchoException):
         _decrypt(FAB_FILE, archive_file, key)
 
 
@@ -140,7 +141,7 @@ def test_download_fab_file(dummy_file_settings, clean, dummy_settings):
     fab_file = dummy_file_settings.temp_installation_folder.joinpath(
         "fabricator.encrypt"
     )
-    with pytest.raises(Abort):
+    with pytest.raises(FatalEchoException):
         download_fabfile(dummy_settings.download_url, fab_file)
 
 
@@ -150,7 +151,7 @@ def test__install(dummy_settings, mock_settings, dummy_file_settings):
         FAB_FILE,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder,bootstrap=False
+        dummy_file_settings.temp_installation_folder
     )
 
     files = list(dummy_settings.installation_folder.glob("**/*.*"))
@@ -228,7 +229,7 @@ def test_cli_download(
         fab_encrypted,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder,False
+        dummy_file_settings.temp_installation_folder
     )
 
     assert result.exit_code == 0

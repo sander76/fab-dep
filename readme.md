@@ -14,11 +14,12 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 - Make sure the virtualenv is active (pipenv shell)
 - `pyinstaller fab.spec`
 - The installer will be built in the `dist/fab` folder
-- Run the inno setup script located in the tools folder and compile
-- Upload it to: https://motorisation.hde.nl/bin/fabricator/win10/
+- Run the inno setup script `inc_mod_path.iss` located in the tools folder and compile
+- Upload `dist/fabtool-setup.exe` to to: https://motorisation.hde.nl/bin/fabricator/win10/
 
 ### Linux
 
+- Make sure you are in the root of this folder.
 - Run the docker container: `docker run -it --entrypoint /bin/bash bionic-fabtool`
 - Update the repo `git pull`
 - create a debian distributable: `python3.7 deploy.py deploy-linux`
@@ -28,7 +29,7 @@ Both a windows10 (64bit) and Ubuntu linux 18.04 (64bit) need to be built.
 
 ### Windows
 
-- Download the zipped file: https://motorisation.hde.nl/bin/fabricator/win10/fabtool-setup.exe and run it.
+- Download the file: https://motorisation.hde.nl/bin/fabricator/win10/fabtool-setup.exe and run it.
 - Verify the installation by opening a powershell session and enter "fab". The tool should run.
 
 ### Linux

@@ -3,6 +3,8 @@ from pathlib import Path
 from sys import platform
 import subprocess
 
+from fab_deploy.exceptions import FatalEchoException
+
 _LOGGER = logging.getLogger(__name__)
 #
 # def _run(*args, cwd=app_folder, capture_output=True, desc=None):
@@ -34,5 +36,5 @@ def execute_bootstrap(install_folder: Path):
     )
 
     if not process.returncode == 0:
-        print(process)
-    print("done")
+        raise FatalEchoException(process.stderr)
+

@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
 """Console script for fab-deploy."""
+import functools
 import json
 import shutil
 import sys
 import logging
 from pathlib import Path
+from time import sleep
 from urllib.parse import urljoin
 import click
+from click import Abort
 
 from fab_deploy.bootstrap import execute_bootstrap
+from fab_deploy.exceptions import EchoException, FatalEchoException
 from . import __version__
 
-from click import Abort
-from pydantic import BaseSettings
+# from click import Abort
+# from pydantic import BaseSettings
 
 from fab_deploy.const import (
     INFO_COLOR,
@@ -49,14 +53,6 @@ jumbo = r"""
 click.echo(jumbo)
 
 
-class EchoException(Exception):
-    pass
-
-
-class FatalEchoException(Exception):
-    pass
-
-
 def working_done(message, done="done."):
     def _echoer(func):
         def _wrapper(*args, **kwargs):
@@ -66,9 +62,9 @@ def working_done(message, done="done."):
                 result = func(*args, **kwargs)
             except EchoException as err:
                 click.secho(str(err), bg=ERROR_COLOR)
-            except FatalEchoException as err:
-                click.secho(str(err), bg=ERROR_COLOR)
-                raise Abort()
+            # except FatalEchoException as err:
+            #     click.secho(str(err), bg=ERROR_COLOR)
+            #     raise
             else:
                 click.secho(done, fg=INFO_COLOR)
                 return result
@@ -78,6 +74,12 @@ def working_done(message, done="done."):
     return _echoer
 
 
+def closed_delay(delay=5):
+    for i in range(delay, 0, -1):
+        print(f"closing in {i} seconds\r", end="", flush=True)
+        sleep(1)
+
+
 def _check_key(settings: "_Settings"):
     if settings.key is None:
         click.secho("----------------------------------", bg=ERROR_COLOR)
@@ -85,10 +87,10 @@ def _check_key(settings: "_Settings"):
         click.secho("----------------------------------", bg=ERROR_COLOR)
         click.secho("Please provide an encryption key:", bg=ERROR_COLOR)
         click.secho("enter <fab --help> to get assistance", bg=ERROR_COLOR)
-        raise Abort()
+        raise FatalEchoException()
 
 
-def _install(fabfile: Path, clean, settings, temp_folder: Path, bootstrap):
+def _install(fabfile: Path, clean, settings, temp_folder: Path):
     if clean:
         _clean(settings.installation_folder)
 
@@ -102,9 +104,6 @@ def _install(fabfile: Path, clean, settings, temp_folder: Path, bootstrap):
         "Fabricator tool can be found at: {}".format(settings.installation_folder),
         fg=INFO_COLOR,
     )
-    if bootstrap:
-        # do bootstrap command
-        execute_bootstrap(settings.installation_folder)
 
 
 def _get_latest_url(settings: "_Settings", json_file) -> str:
@@ -114,6 +113,19 @@ def _get_latest_url(settings: "_Settings", json_file) -> str:
 
     latest = _version["latest"]
     return urljoin(settings.download_url, latest)
+
+
+def fatal_handler(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except FatalEchoException as err:
+            click.secho(str(err), fg=ERROR_COLOR)
+            click.prompt("ENTER to EXIT", default="")
+            raise Abort()
+
+    return wrapper
 
 
 @working_done("Decrypting...")
@@ -141,9 +153,8 @@ def _clean(output_folder: Path):
     except FileNotFoundError:
         click.secho("Folder does not exist. Continueing", fg=INFO_COLOR)
     except PermissionError:
-        click.secho(
-            "Unable to clear installation folder. Did you close the fabricator ?",
-            bg=ERROR_COLOR,
+        raise FatalEchoException(
+            "Unable to clear installation folder. Did you close the fabricator ?"
         )
 
 
@@ -154,8 +165,7 @@ def _extract(archive, output_folder):
 
     except Exception as err:
         LOGGER.exception(err)
-        click.secho(err)
-        raise Abort()
+        raise FatalEchoException(err)
 
 
 @click.group()
@@ -164,23 +174,22 @@ def _extract(archive, output_folder):
 )
 @click.option("--bootstrap", default=False, help="bootstrap the app", is_flag=True)
 @click.pass_context
+@fatal_handler
 def install(ctx, clean, bootstrap):
     """Install the fabricator tool."""
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
-
-    # ctx.file_settings = file_settings
-    ctx.obj = {
-        "settings": settings,
-        "file_settings": file_settings,
-        "bootstrap": bootstrap,
-    }
+    ctx.obj = {}
+    ctx.obj["settings"] = settings
+    ctx.obj["file_settings"] = file_settings
+    ctx.obj["bootstrap"] = bootstrap
 
     _check_key(settings)
 
 
 @install.command()
 @click.pass_context
+@fatal_handler
 def download(ctx):
     """Use download location."""
     settings = ctx.obj.get("settings")
@@ -192,7 +201,7 @@ def download(ctx):
         click.secho("-----------------------", bg="red")
         click.echo("")
         click.secho("Use <fab --help> for help.")
-        raise Abort()
+        raise FatalEchoException()
     click.secho("downloading version file {}".format(str(file_settings.version_file)))
     version_file = download_version_file(
         settings.download_url, file_settings.version_file
@@ -202,14 +211,15 @@ def download(ctx):
     fabfile = file_settings.temp_installation_folder.joinpath("fabricator.encrypt")
     download_fabfile(binary_url, fabfile, force_download=True)
 
-    bootstrap = ctx.obj.get("bootstrap")
+    _install(fabfile, True, settings, file_settings.temp_installation_folder)
 
-    _install(fabfile, True, settings, file_settings.temp_installation_folder, bootstrap)
+    closed_delay()
 
 
 @install.command()
 @click.argument("file", type=click.Path(exists=True))
 @click.pass_context
+@fatal_handler
 def from_file(ctx, file):
     """Install fabricator using a provided binary file."""
     fabfile = Path(file)
@@ -224,8 +234,11 @@ def from_file(ctx, file):
 
 @click.command()
 @click.argument("key", type=click.STRING)
+@fatal_handler
 def set_key(key: str):
     """Set an encryption key"""
+    if len(key) != 64:
+        raise FatalEchoException("Key length incorrect.")
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
     settings.key = key
@@ -238,6 +251,7 @@ def set_key(key: str):
 
 @click.command()
 @click.argument("download_url")
+@fatal_handler
 def set_url(download_url: str):
     """Provide the full URL to check for updates."""
     file_settings = get_file_settings()
@@ -251,7 +265,9 @@ def set_url(download_url: str):
 
 
 @click.command()
+@fatal_handler
 def bootstrap():
+
     """Prepare the fabricator app for usage."""
     file_settings = get_file_settings()
     settings = load_settings(file_settings.config_file)
