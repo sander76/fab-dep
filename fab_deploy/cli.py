@@ -116,12 +116,18 @@ def _get_latest_url(settings: "_Settings", json_file) -> str:
 
 
 def fatal_handler(func):
+    """Wrapper that catches fatal errors and displays them."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
         except FatalEchoException as err:
-            click.secho(str(err), fg=ERROR_COLOR)
+            click.secho(30 * "-", fg=ERROR_COLOR, bold=True)
+            click.secho("  ## PROBLEM !! ##", bg=ERROR_COLOR, fg="white", bold=True)
+            click.secho(30 * "-", fg=ERROR_COLOR, bold=True)
+            click.secho("  " + str(err), bold=True)
+            click.secho(30 * "-", fg=ERROR_COLOR, bold=True)
+            click.echo("")
             click.prompt("ENTER to EXIT", default="")
             raise Abort()
 

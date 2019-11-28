@@ -91,4 +91,4 @@ def load_settings(settings_file: Path) -> _Settings:
 
 INFO_COLOR = "cyan"
 OK_COLOR = "green"
-ERROR_COLOR = "red"
+ERROR_COLOR = "bright_red"
