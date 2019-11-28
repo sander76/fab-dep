@@ -7,14 +7,8 @@ import responses
 from click import Abort
 from click.testing import CliRunner
 
-from fab_deploy.cli import (
-    _extract,
-    _decrypt,
-    _clean,
-    _install,
-    _get_latest_url,
-    main,
-)
+from fab_deploy.cli import _extract, _decrypt, _clean, _install, _get_latest_url, main
+from fab_deploy import cli
 from fab_deploy.const import _Settings, _FileSettings
 from fab_deploy.download import download_fabfile, download_version_file
 from fab_deploy.exceptions import FatalEchoException
@@ -66,9 +60,11 @@ def mock_settings(monkeypatch, dummy_settings, dummy_file_settings):
 def dummy_version_file(tmp_path):
     return tmp_path / "version.json"
 
+
 def test_settings():
     settings = _Settings()
     assert settings is not None
+
 
 def test_extract(dummy_file_settings):
 
@@ -102,9 +98,7 @@ def test_extract(dummy_file_settings):
 def test_decrypt_wrong_file(dummy_file_settings, clean):
     """No file to encrypt found"""
     with pytest.raises(FatalEchoException):
-        _decrypt(
-            FAKE_FAB_FILE, dummy_file_settings.temp_installation_folder, KEY
-        )
+        _decrypt(FAKE_FAB_FILE, dummy_file_settings.temp_installation_folder, KEY)
 
 
 def test_decrypt_file(dummy_file_settings, clean):
@@ -148,10 +142,7 @@ def test_download_fab_file(dummy_file_settings, clean, dummy_settings):
 def test__install(dummy_settings, mock_settings, dummy_file_settings):
 
     _install(
-        FAB_FILE,
-        True,
-        dummy_settings,
-        dummy_file_settings.temp_installation_folder
+        FAB_FILE, True, dummy_settings, dummy_file_settings.temp_installation_folder
     )
 
     files = list(dummy_settings.installation_folder.glob("**/*.*"))
@@ -186,9 +177,14 @@ def mock_install_function(monkeypatch):
     return mock_install
 
 
+def mock_check_running(*args, **kwargs):
+    pass
+
+
 def test_cli_file(
     mock_settings, dummy_file_settings, dummy_settings, mock_install_function
 ):
+    cli.check_running = mock_check_running
     runner = CliRunner()
     result = runner.invoke(main, ["install", "from-file", str(FAB_FILE)])
 
@@ -196,7 +192,8 @@ def test_cli_file(
         FAB_FILE,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder,False
+        dummy_file_settings.temp_installation_folder,
+        False,
     )
     assert result.exit_code == 0
 
@@ -209,7 +206,7 @@ def test_cli_download(
     mock_download_fabfile,
     mock_install_function,
 ):
-
+    cli.check_running = mock_check_running
     fab_encrypted = dummy_file_settings.temp_installation_folder.joinpath(
         "fabricator.encrypt"
     )
@@ -229,7 +226,7 @@ def test_cli_download(
         fab_encrypted,
         True,
         dummy_settings,
-        dummy_file_settings.temp_installation_folder
+        dummy_file_settings.temp_installation_folder,
     )
 
     assert result.exit_code == 0
