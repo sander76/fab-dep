@@ -193,7 +193,6 @@ def test_cli_file(
         True,
         dummy_settings,
         dummy_file_settings.temp_installation_folder,
-        False,
     )
     assert result.exit_code == 0
 
@@ -233,7 +232,7 @@ def test_cli_download(
 
 
 def test_get_latest_url(dummy_settings):
-    latest = _get_latest_url(dummy_settings, VERSION_FILE)
+    latest = _get_latest_url(dummy_settings.download_url, VERSION_FILE)
 
     assert (
         latest

@@ -129,13 +129,13 @@ def _install(fabfile: Path, clean, settings, temp_folder: Path):
     )
 
 
-def _get_latest_url(settings: "_Settings", json_file) -> str:
+def _get_latest_url(download_folder: str, json_file) -> str:
     """Get the filename of the latest fabricator release."""
     with open(json_file) as fl:
         _version = json.load(fl)
 
     latest = _version["latest"]
-    return urljoin(settings.download_url, latest)
+    return urljoin(download_folder, latest)
 
 
 def fatal_handler(func):
@@ -221,9 +221,19 @@ def install(ctx, clean, bootstrap):
 
 @install.command()
 @click.pass_context
+@click.option(
+    "--channel",
+    default=None,
+    help="install from a specific channel. If omitted release channel is used.",
+)
 @fatal_handler
-def download(ctx):
-    """Use download location."""
+def download(ctx, channel=None):
+    """Install fabtool by automatically downloading and installing it.
+
+    :param channel: Install from a specific channel. If omitted the release channel
+        is used. A release channel is basically a folder which get appended to the
+        base download url.
+    """
     settings = ctx.obj.get("settings")
     file_settings: "_FileSettings" = ctx.obj.get("file_settings")
 
@@ -235,13 +245,17 @@ def download(ctx):
         click.secho("Use <fab --help> for help.")
         raise FatalEchoException()
     click.secho("downloading version file {}".format(str(file_settings.version_file)))
-    version_file = download_version_file(
-        settings.download_url, file_settings.version_file
-    )
-    binary_url = _get_latest_url(settings, version_file)
+
+    if channel:
+        download_url = f"{settings.download_url}/{channel}/"
+    else:
+        download_url = settings.download_url
+
+    version_file = download_version_file(download_url, file_settings.version_file)
+    binary_url = _get_latest_url(download_url, version_file)
     click.secho("downloading binary {}".format(str(binary_url)))
     fabfile = file_settings.temp_installation_folder.joinpath("fabricator.encrypt")
-    download_fabfile(binary_url, fabfile, force_download=True)
+    download_fabfile(binary_url, fabfile)
 
     _install(fabfile, True, settings, file_settings.temp_installation_folder)
 
