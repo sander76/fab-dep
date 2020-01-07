@@ -259,9 +259,7 @@ def from_file(ctx, file):
     settings: "_Settings" = ctx.obj.get("settings")
     file_settings: "_FileSettings" = ctx.obj.get("file_settings")
 
-    bootstrap = ctx.obj.get("bootstrap")
-
-    _install(fabfile, True, settings, file_settings.temp_installation_folder, bootstrap)
+    _install(fabfile, True, settings, file_settings.temp_installation_folder)
 
 
 @click.command()
