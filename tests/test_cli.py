@@ -7,7 +7,16 @@ import responses
 from click import Abort
 from click.testing import CliRunner
 
-from fab_deploy.cli import _extract, _decrypt, _clean, _install, _get_latest_url, main
+from fab_deploy.cli import (
+    _extract,
+    _decrypt,
+    _clean,
+    _install,
+    _get_latest_url,
+    main,
+    _set_key,
+    _auto_load,
+)
 from fab_deploy import cli
 from fab_deploy.const import _Settings, _FileSettings
 from fab_deploy.download import download_fabfile, download_version_file
@@ -20,6 +29,8 @@ FAB_FILE = HERE.joinpath("test_files", "fabricator.encrypt")
 FAKE_FAB_FILE = HERE.joinpath("test_files", "archive.ease_fake.aes")
 VERSION_FILE = HERE.joinpath("test_files", "version.json")
 
+good_key = "dsfsdfsdgtry4y45ygrth56u64h56uhy45gerg46h5u756y45terferfghryujh6"
+bad_key = "abcdefsdfwert445tyer"
 
 DUMMY_DOWNLOAD_URL = "https://motorisation.hde.nl/fabricator/win10/"
 
@@ -59,6 +70,14 @@ def mock_settings(monkeypatch, dummy_settings, dummy_file_settings):
 @pytest.fixture
 def dummy_version_file(tmp_path):
     return tmp_path / "version.json"
+
+
+@pytest.fixture
+def dummy_key_file(tmp_path):
+    key_file = tmp_path / "key.txt"
+    with open(key_file, "w") as fl:
+        fl.write(good_key)
+    return tmp_path
 
 
 def test_settings():
@@ -239,3 +258,24 @@ def test_get_latest_url(dummy_settings):
         latest
         == "https://motorisation.hde.nl/fabricator/win10/win10-fabricator-app0.11-ease1.0.fab"
     )
+
+
+def test_set_key():
+
+    resp = _set_key(good_key)
+    assert resp == good_key
+
+
+def test_set_key_fail():
+    with pytest.raises(FatalEchoException):
+        _set_key(bad_key)
+
+
+def test_autoload_key(dummy_key_file):
+    key = _auto_load(dummy_key_file)
+    assert key == good_key
+
+
+def test_autoload_not_found(tmp_path):
+    with pytest.raises(FatalEchoException):
+        _auto_load(tmp_path)

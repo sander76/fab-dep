@@ -42,15 +42,13 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-# KEY_EAKEY = "eakey"
-
 jumbo = r"""
   ______      ____ _______ ____   ____  _      
  |  ____/\   |  _ \__   __/ __ \ / __ \| |     
  | |__ /  \  | |_) | | | | |  | | |  | | |     
  |  __/ /\ \ |  _ <  | | | |  | | |  | | |     
  | | / ____ \| |_) | | | | |__| | |__| | |____ 
- |_|/_/    \_\____/  |_|  \____/ \____/|______|
+ |_|/_/    \_\____/  |_|  \____/ \____/|______|manager
                                                
 
 """
@@ -264,11 +262,7 @@ def from_file(ctx, file):
     _install(fabfile, True, settings, file_settings.temp_installation_folder, bootstrap)
 
 
-@click.command()
-@click.argument("key", type=click.STRING)
-@fatal_handler
-def set_key(key: str):
-    """Set an encryption key"""
+def _set_key(key: str):
     if len(key) != 64:
         raise FatalEchoException("Key length incorrect.")
     file_settings = get_file_settings()
@@ -279,6 +273,38 @@ def set_key(key: str):
 
     click.secho("Encryption key saved.", fg="green")
     click.secho(key, fg="green")
+    return key
+
+
+@click.command()
+@click.argument("key", type=click.STRING)
+@fatal_handler
+def set_key(key: str):
+    """Set an encryption key"""
+    _set_key(key)
+
+
+def _auto_load(folder: Path):
+    txt = folder / "key.txt"
+    if not txt.exists():
+        raise FatalEchoException(f"No key found. {txt}")
+
+    with open(txt) as fl:
+        _key = fl.read()
+
+    return _key
+
+
+@click.command()
+@fatal_handler
+def auto_load():
+    """Look in the current folder for a key.txt file and automatically processes it."""
+
+    current_folder = Path.cwd()
+    click.secho(f"Current working folder {current_folder}")
+
+    _key = _auto_load(current_folder)
+    _set_key(_key)
 
 
 @click.command()
@@ -314,6 +340,7 @@ def main():
 
 main.add_command(install)
 main.add_command(set_key)
+main.add_command(auto_load)
 main.add_command(set_url)
 main.add_command(bootstrap)
 

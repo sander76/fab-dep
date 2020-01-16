@@ -37,4 +37,3 @@ def execute_bootstrap(install_folder: Path):
 
     if not process.returncode == 0:
         raise FatalEchoException(process.stderr)
-

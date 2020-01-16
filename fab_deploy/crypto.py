@@ -90,8 +90,7 @@ def encryptFile(infile, outfile, passw, bufferSize):
             # (i.e.: overwrite if it seems safe)
             if path.isfile(outfile):
                 if path.samefile(infile, outfile):
-                    raise ValueError("Input and output files "
-                                     "are the same.")
+                    raise ValueError("Input and output files " "are the same.")
             try:
                 with open(outfile, "wb") as fOut:
                     # encrypt file stream
@@ -101,7 +100,7 @@ def encryptFile(infile, outfile, passw, bufferSize):
                 raise IOError("Unable to write output file.")
 
     except IOError:
-        raise IOError("File \"" + infile + "\" was not found.")
+        raise IOError('File "' + infile + '" was not found.')
 
 
 # encrypt binary stream function
@@ -135,25 +134,21 @@ def encryptStream(fIn, fOut, passw, bufferSize):
     intKey = urandom(32)
 
     # instantiate AES cipher
-    cipher0 = Cipher(algorithms.AES(intKey), modes.CBC(iv0),
-                     backend=default_backend())
+    cipher0 = Cipher(algorithms.AES(intKey), modes.CBC(iv0), backend=default_backend())
     encryptor0 = cipher0.encryptor()
 
     # instantiate HMAC-SHA256 for the ciphertext
-    hmac0 = hmac.HMAC(intKey, hashes.SHA256(),
-                      backend=default_backend())
+    hmac0 = hmac.HMAC(intKey, hashes.SHA256(), backend=default_backend())
 
     # instantiate another AES cipher
-    cipher1 = Cipher(algorithms.AES(key), modes.CBC(iv1),
-                     backend=default_backend())
+    cipher1 = Cipher(algorithms.AES(key), modes.CBC(iv1), backend=default_backend())
     encryptor1 = cipher1.encryptor()
 
     # encrypt main iv and key
     c_iv_key = encryptor1.update(iv0 + intKey) + encryptor1.finalize()
 
     # calculate HMAC-SHA256 of the encrypted iv and key
-    hmac1 = hmac.HMAC(key, hashes.SHA256(),
-                      backend=default_backend())
+    hmac1 = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
     hmac1.update(c_iv_key)
 
     # write header
@@ -173,8 +168,7 @@ def encryptStream(fIn, fOut, passw, bufferSize):
     fOut.write(b"\x00" + bytes([1 + len("CREATED_BY" + cby)]))
 
     # write "CREATED-BY" extension
-    fOut.write(bytes("CREATED_BY", "utf8") + b"\x00" +
-               bytes(cby, "utf8"))
+    fOut.write(bytes("CREATED_BY", "utf8") + b"\x00" + bytes(cby, "utf8"))
 
     # write "container" extension length
     fOut.write(b"\x00\x80")
@@ -217,8 +211,7 @@ def encryptStream(fIn, fOut, passw, bufferSize):
                 padLen = 16 - bytesRead % AESBlockSize
             fdata += bytes([padLen]) * padLen
             # encrypt data
-            cText = encryptor0.update(fdata) \
-                    + encryptor0.finalize()
+            cText = encryptor0.update(fdata) + encryptor0.finalize()
             # update HMAC
             hmac0.update(cText)
             # write encrypted file content
@@ -257,15 +250,13 @@ def decryptFile(infile, outfile, passw, bufferSize):
             # (i.e.: overwrite if it seems safe)
             if path.isfile(outfile):
                 if path.samefile(infile, outfile):
-                    raise ValueError("Input and output files "
-                                     "are the same.")
+                    raise ValueError("Input and output files " "are the same.")
             try:
                 with open(outfile, "wb") as fOut:
                     # get input file size
                     inputFileSize = stat(infile).st_size
 
-                    decryptStream(fIn, fOut, passw, bufferSize,
-                                  inputFileSize)
+                    decryptStream(fIn, fOut, passw, bufferSize, inputFileSize)
             except ValueError as exd:
                 # remove output file on error
                 remove(outfile)
@@ -276,7 +267,7 @@ def decryptFile(infile, outfile, passw, bufferSize):
                 raise IOError("Unable to write output file.")
 
     except IOError:
-        raise IOError("File \"" + infile + "\" was not found.")
+        raise IOError('File "' + infile + '" was not found.')
 
 
 # decrypt stream function
@@ -298,9 +289,10 @@ def decryptStream(fIn, fOut, passw, bufferSize, inputLength):
 
     fdata = fIn.read(3)
     # check if file is in AES Crypt format (also min length check)
-    if (fdata != bytes("AES", "utf8") or inputLength < 136):
-        raise ValueError("File is corrupted or not an AES Crypt "
-                         "(or pyAesCrypt) file.")
+    if fdata != bytes("AES", "utf8") or inputLength < 136:
+        raise ValueError(
+            "File is corrupted or not an AES Crypt " "(or pyAesCrypt) file."
+        )
 
     # check if file is in AES Crypt format, version 2
     # (the only one compatible with pyAesCrypt)
@@ -309,8 +301,10 @@ def decryptStream(fIn, fOut, passw, bufferSize, inputLength):
         raise ValueError("File is corrupted.")
 
     if fdata != b"\x02":
-        raise ValueError("pyAesCrypt is only compatible with version "
-                         "2 of the AES Crypt file format.")
+        raise ValueError(
+            "pyAesCrypt is only compatible with version "
+            "2 of the AES Crypt file format."
+        )
 
     # skip reserved byte
     fIn.read(1)
@@ -343,8 +337,7 @@ def decryptStream(fIn, fOut, passw, bufferSize, inputLength):
         raise ValueError("File is corrupted.")
 
     # compute actual HMAC-SHA256 of the encrypted iv and key
-    hmac1Act = hmac.HMAC(key, hashes.SHA256(),
-                         backend=default_backend())
+    hmac1Act = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
     hmac1Act.update(c_iv_key)
 
     # HMAC check
@@ -352,8 +345,7 @@ def decryptStream(fIn, fOut, passw, bufferSize, inputLength):
         raise ValueError("Wrong password (or file is corrupted).")
 
     # instantiate AES cipher
-    cipher1 = Cipher(algorithms.AES(key), modes.CBC(iv1),
-                     backend=default_backend())
+    cipher1 = Cipher(algorithms.AES(key), modes.CBC(iv1), backend=default_backend())
     decryptor1 = cipher1.decryptor()
 
     # decrypt main iv and key
@@ -364,13 +356,11 @@ def decryptStream(fIn, fOut, passw, bufferSize, inputLength):
     intKey = iv_key[16:]
 
     # instantiate another AES cipher
-    cipher0 = Cipher(algorithms.AES(intKey), modes.CBC(iv0),
-                     backend=default_backend())
+    cipher0 = Cipher(algorithms.AES(intKey), modes.CBC(iv0), backend=default_backend())
     decryptor0 = cipher0.decryptor()
 
     # instantiate actual HMAC-SHA256 of the ciphertext
-    hmac0Act = hmac.HMAC(intKey, hashes.SHA256(),
-                         backend=default_backend())
+    hmac0Act = hmac.HMAC(intKey, hashes.SHA256(), backend=default_backend())
 
     while fIn.tell() < inputLength - 32 - 1 - bufferSize:
         # read data
@@ -412,7 +402,7 @@ def decryptStream(fIn, fOut, passw, bufferSize, inputLength):
     pText = decryptor0.update(cText) + decryptor0.finalize()
 
     # remove padding
-    toremove = ((16 - fs16[0]) % 16)
+    toremove = (16 - fs16[0]) % 16
     if toremove != 0:
         pText = pText[:-toremove]
 

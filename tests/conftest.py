@@ -5,8 +5,7 @@ from shutil import rmtree
 import pytest
 
 
-
-#test_location = "http://localhost:8000/fabricator.ease"
+# test_location = "http://localhost:8000/fabricator.ease"
 
 
 def _remove(path: Path) -> bool:
@@ -22,7 +21,6 @@ def _remove(path: Path) -> bool:
                 current_try += 1
 
     return False
-
 
 
 @pytest.fixture
