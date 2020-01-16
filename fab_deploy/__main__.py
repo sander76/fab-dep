@@ -1,5 +1,7 @@
-import sys
-from fab_deploy.cli import main
+import logging
 
+_LOGGER = logging.getLogger(__name__)
 
-sys.exit(main())
+from fab_deploy import cli
+
+cli.main()

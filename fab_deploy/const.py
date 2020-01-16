@@ -80,6 +80,7 @@ def load_settings(settings_file: Path) -> _Settings:
     settings.installation_folder.mkdir(exist_ok=True, parents=True)
     return settings
 
+
 INFO_COLOR = "cyan"
 OK_COLOR = "green"
 ERROR_COLOR = "bright_red"
